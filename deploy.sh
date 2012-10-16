@@ -51,27 +51,30 @@ echo " # "${app}" promotion script #"
 echo " # ------------------------- #"
 echo ""
 
-echo -e " #"${BLUE}" Deployment path : "${RESET}${DEPLOY_PATH}
-echo -e " #"${BLUE}" Release www path : "${RESET}${WWW_PATH}
-echo -e " #"${BLUE}" Live www path : "${RESET}${WWW_LINK}
-echo ""
-
 # Check user
 echo -e " #"${GREEN}" Current user is : "${RESET}$(whoami)
 echo ""
 
+echo -e " #"${BLUE}" Deployment path : "${RESET}${DEPLOY_PATH}
+echo -e " #"${BLUE}" Release www path : "${RESET}${WWW_PATH}
+echo -e " #"${BLUE}" Live www path : "${RESET}${WWW_LINK}
+
 # Go into the deploy directory
-echo -e " #"${GREEN}" Changing directory "${RESET}" to "${DEPLOY_PATH} 
+echo -e " #"${YELLOW}" Changing directory "${RESET}" to "${DEPLOY_PATH} 
 echo ""
 cd ${DEPLOY_PATH}
 
 # Git all the way
 echo -e " #"${GREEN}" Checking out live branch from origin"${RESET}
 echo ""
-git checkout live
-git reset --hard HEAD
-git pull origin
-git status
+#echo "   | "`git checkout live`
+echo "   | "`git reset --hard HEAD`
+echo "   | "`git pull origin`
+echo "   | "`git status`
+echo ""
+
+revision=`git log -n 1 --pretty="format:%h %ci"`
+echo -e " #"${BLUE}" Repository updated to revision : "${RESET}${revision}
 echo ""
 
 #
@@ -99,13 +102,13 @@ then
 else
 
   echo -e " #"${GREEN}" Promoting "${RESET}${env}" environment to current release"
-  echo ""
+
   # Copy all files to the destination folder
   mkdir ${WWW_PATH}
   rsync -r ${DEPLOY_PATH}/* ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
   
   echo -e " #"${GREEN}" Linking "${RESET}
-  echo ""
+
   # Link
   unlink ${WWW_LINK}
   ln -s ${WWW_PATH} ${WWW_LINK}
