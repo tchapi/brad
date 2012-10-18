@@ -83,19 +83,35 @@ echo ""
 if [ $# -ge 3 ]
 then
 
-  echo -e " #"${GREEN}" Promoting "${RESET}${env}" environment partially to current release"
+  SCALPEL_PATH=${WWW_PATH}"_scalpel"
+
+  echo -e " #"${GREEN}" Duplicating"${RESET}" actual "${env}" environment into "${SCALPEL_PATH}
+  echo ""
+  # Copy all files from current release to a new release
+  mkdir ${SCALPEL_PATH}
+  rsync -rlptv ${WWW_LINK}/* ${SCALPEL_PATH}/.
+  
+  echo ""
+  echo -e " #"${GREEN}" Scalpeling "${RESET}${env}" environment to partial release"
   echo -e " #  "${YELLOW}"\_Files : "
   
   # Checking we have files and copying
   for x in "$@"; do 
     if [ -e ${DEPLOY_PATH}"/"$x ]
     then
-    echo -e " #   - "$x
-    cp -f ${DEPLOY_PATH}/$x ${WWW_LINK}/.;
+      echo -e "    | "$x
+      rsync -rlptv --inplace ${DEPLOY_PATH}/$x ${SCALPEL_PATH}/.;
     fi
   done
+  
+  echo ""
+  echo -e " #"${GREEN}" Linking "${RESET}
 
-  echo -e ${RESET}
+  # Link
+  unlink ${WWW_LINK}
+  ln -s ${SCALPEL_PATH} ${WWW_LINK}
+
+  echo ""
   echo -e " # "${GREEN}"Done. "${RESET}
   echo ""
 
@@ -105,7 +121,7 @@ else
 
   # Copy all files to the destination folder
   mkdir ${WWW_PATH}
-  rsync -r ${DEPLOY_PATH}/* ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
+  rsync -rlptv ${DEPLOY_PATH}/* ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
   
   echo -e " #"${GREEN}" Linking "${RESET}
 
