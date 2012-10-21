@@ -42,7 +42,7 @@ esac
 date_today=`date '+%Y-%m-%d'`
 timestamp=`date '+%s'`
 DEPLOY_PATH=${APP_BASE_PATH}'/deploy/'${app}'/'${env}
-WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/release-'${date_today}"-"${timestamp}
+WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/release-'${env}'-'${date_today}"-"${timestamp}
 WWW_LINK=${APP_BASE_PATH}'/www/'${app}'/'${env}
 
 echo -e ""${RESET}
@@ -121,7 +121,7 @@ else
 
   # Copy all files to the destination folder
   mkdir ${WWW_PATH}
-  rsync -rlptv ${DEPLOY_PATH}/* ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
+  rsync -rlptv ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
   
   echo -e " #"${GREEN}" Linking "${RESET}
 
