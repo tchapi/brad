@@ -41,7 +41,7 @@ esac
 
 date_today=`date '+%Y-%m-%d'`
 timestamp=`date '+%s'`
-DEPLOY_PATH=${APP_BASE_PATH}'/deploy/'${app}
+DEPLOY_PATH=${APP_BASE_PATH}'/deploy/'${app}'/'${env}
 WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/release-'${date_today}"-"${timestamp}
 WWW_LINK=${APP_BASE_PATH}'/www/'${app}'/'${env}
 
