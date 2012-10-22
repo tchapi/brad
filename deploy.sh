@@ -11,13 +11,15 @@ APP_BASE_PATH='/home/tchap'
 
 if [ $# -lt 2 ]
 then
-  echo " Usage: $0 (application) (env) [file1 file2 ...]";
   echo ""
-  exit 1;
+  echo -e ${GREEN}" Github / Git common promotion script "${RESET}
+  echo " Usage: $0 (application) (env) [file1 file2 ...]"
+  echo ""
+  exit 1
 fi  
 
 # Checking application is good
-app=$1;
+app=$1
 
 case $app in
   "tuneefy") app="tuneefy";;
@@ -28,7 +30,7 @@ case $app in
 esac
 
 # Checking environment is good
-env=$2;
+env=$2
 
 case $env in
   "prod") env="prod";;
@@ -44,6 +46,8 @@ timestamp=`date '+%s'`
 DEPLOY_PATH=${APP_BASE_PATH}'/deploy/'${app}'/'${env}
 WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/release-'${env}'-'${date_today}"-"${timestamp}
 WWW_LINK=${APP_BASE_PATH}'/www/'${app}'/'${env}
+
+ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
 echo -e ""${RESET}
 echo " # ------------------------- #"
@@ -67,7 +71,6 @@ cd ${DEPLOY_PATH}
 # Git all the way
 echo -e " #"${GREEN}" Checking out live branch from origin"${RESET}
 echo ""
-#echo "   | "`git checkout live`
 echo "   | "`git reset --hard HEAD`
 echo "   | "`git pull origin`
 echo "   | "`git status`
@@ -76,6 +79,26 @@ echo ""
 revision=`git log -n 1 --pretty="format:%h %ci"`
 echo -e " #"${BLUE}" Repository updated to revision : "${RESET}${revision}
 echo ""
+
+
+# Building minified JS if we have a minify script in admin/
+if [ -e ${ADMIN_PATH}"/minify.php" ]
+then
+  echo -e " # "${RED}"Do you wish to build minified Javascript"${RESET}" [no] ?\c"
+  read yn
+  case $yn in
+      [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Building"${RESET}" minified JS :"
+              echo -e "   |  \__ "${BLUE}${DEPLOY_PATH}"/js/min/"${app}".min.js"${RESET}
+              cd ${ADMIN_PATH}
+              php minify.php > ${DEPLOY_PATH}/js/min/${app}.min.js
+              echo ""
+              echo -e " # "${GREEN}"Done. "${RESET}
+              echo "" ;;
+      * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
+          echo "" ;;
+  esac
+
+fi
 
 #
 # Do we promote live the whole branch or just files ?
@@ -89,7 +112,7 @@ then
   echo ""
   # Copy all files from current release to a new release
   mkdir ${SCALPEL_PATH}
-  rsync -rlptv ${WWW_LINK}/* ${SCALPEL_PATH}/.
+  rsync -rlpt ${WWW_LINK}/* ${SCALPEL_PATH}/.
   
   echo ""
   echo -e " #"${GREEN}" Scalpeling "${RESET}${env}" environment to partial release"
@@ -100,7 +123,7 @@ then
     if [ -e ${DEPLOY_PATH}"/"$x ]
     then
       echo -e "    | "$x
-      rsync -rlptv --inplace ${DEPLOY_PATH}/$x ${SCALPEL_PATH}/.;
+      rsync -rlptv --inplace ${DEPLOY_PATH}/$x ${SCALPEL_PATH}/.
     fi
   done
   
@@ -121,7 +144,7 @@ else
 
   # Copy all files to the destination folder
   mkdir ${WWW_PATH}
-  rsync -rlptv ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
+  rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
   
   echo -e " #"${GREEN}" Linking "${RESET}
 
@@ -133,6 +156,7 @@ else
   echo ""
 
 fi
+
 
 # Restart Apache
 echo -e " #"${GREEN}" Restarting Apache ... "${RESET}
