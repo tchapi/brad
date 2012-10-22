@@ -44,7 +44,7 @@ esac
 date_today=`date '+%Y-%m-%d'`
 timestamp=`date '+%s'`
 DEPLOY_PATH=${APP_BASE_PATH}'/deploy/'${app}'/'${env}
-WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/release-'${env}'-'${date_today}"-"${timestamp}
+WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
 WWW_LINK=${APP_BASE_PATH}'/www/'${app}'/'${env}
 
 ADMIN_PATH=${DEPLOY_PATH}'/admin'
@@ -80,6 +80,7 @@ revision=`git log -n 1 --pretty="format:%h %ci"`
 echo -e " #"${BLUE}" Repository updated to revision : "${RESET}${revision}
 echo ""
 
+WWW_PATH=${WWW_PATH}"-"${revision}
 
 # Building minified JS if we have a minify script in admin/
 if [ -e ${ADMIN_PATH}"/minify.php" ]
