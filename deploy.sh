@@ -80,7 +80,8 @@ revision=`git log -n 1 --pretty="format:%h %ci"`
 echo -e " #"${BLUE}" Repository updated to revision : "${RESET}${revision}
 echo ""
 
-WWW_PATH=${WWW_PATH}"-"${revision}
+revision_safe=`git log -n 1 --pretty="format:%h"`
+WWW_PATH=${WWW_PATH}"-"${revision_safe}
 
 # Building minified JS if we have a minify script in admin/
 if [ -e ${ADMIN_PATH}"/minify.php" ]
@@ -113,7 +114,7 @@ then
   echo ""
   # Copy all files from current release to a new release
   mkdir ${SCALPEL_PATH}
-  rsync -rlpt ${WWW_LINK}/* ${SCALPEL_PATH}/.
+  rsync -rlpt ${WWW_LINK}/. ${SCALPEL_PATH}/.
   
   echo ""
   echo -e " #"${GREEN}" Scalpeling "${RESET}${env}" environment to partial release"
@@ -124,7 +125,7 @@ then
     if [ -e ${DEPLOY_PATH}"/"$x ]
     then
       echo -e "    | "$x
-      rsync -rlptv --inplace ${DEPLOY_PATH}/$x ${SCALPEL_PATH}/.
+      rsync -rlptv --inplace ${DEPLOY_PATH}/$x ${SCALPEL_PATH}/$x
     fi
   done
   
@@ -132,8 +133,7 @@ then
   echo -e " #"${GREEN}" Linking "${RESET}
 
   # Link
-  unlink ${WWW_LINK}
-  ln -s ${SCALPEL_PATH} ${WWW_LINK}
+  ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
 
   echo ""
   echo -e " # "${GREEN}"Done. "${RESET}
@@ -148,11 +148,12 @@ else
   rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
   
   echo -e " #"${GREEN}" Linking "${RESET}
+  echo ""
 
   # Link
-  unlink ${WWW_LINK}
-  ln -s ${WWW_PATH} ${WWW_LINK}
+  ln -sfvn ${WWW_PATH} ${WWW_LINK}
 
+  echo ""
   echo -e " # "${GREEN}"Done. "${RESET}
   echo ""
 
