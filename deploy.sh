@@ -1,7 +1,12 @@
 # Deployement script for GitHub
 #!/bin/bash
 
-# Load configuration file
+# Common color helpers
+YELLOW='\033[01;33m'  # bold yellow
+RED='\033[01;31m' # bold red
+GREEN='\033[01;32m' # green
+BLUE='\033[01;34m'  # blue
+RESET='\033[00;00m' # normal white
 
 # Check major bash version
 bash_version=${BASH_VERSION%%[^0-9]*}
@@ -19,7 +24,8 @@ fi
 # Only in bash > 4.0, check `bash -version`for help
 declare -A projects
 
-CONFIG_FILE=deploy.conf
+# Load configuration file
+CONFIG_FILE="$(dirname $0)/deploy.conf"
 
 if [[ -f $CONFIG_FILE ]]; then
         . $CONFIG_FILE
@@ -33,14 +39,7 @@ else
 
 fi
 
-# Common color helpers
-
-YELLOW='\033[01;33m'  # bold yellow
-RED='\033[01;31m' # bold red
-GREEN='\033[01;32m' # green
-BLUE='\033[01;34m'  # blue
-RESET='\033[00;00m' # normal white
-
+# Do we have enough arguments ?
 if [ $# -lt 2 ]
 then
   echo ""
@@ -51,7 +50,6 @@ then
 fi  
 
 # Checking that the project exists
-
 app=$1
 
 project_found=false
