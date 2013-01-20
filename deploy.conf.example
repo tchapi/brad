@@ -1,0 +1,5 @@
+# The base path for your www folder :
+APP_BASE_PATH='/home/user'
+
+# Indicate an array of project here :
+projects["my_project"]="standalone" # Can be "symfony2" as well for now

@@ -1,13 +1,45 @@
 # Deployement script for GitHub
 #!/bin/bash
 
+# Load configuration file
+
+# Check major bash version
+bash_version=${BASH_VERSION%%[^0-9]*}
+min_bash_version=4
+
+if [ "$bash_version" -lt "$min_bash_version" ]
+then
+  echo ""
+  echo "Oh, ... bugger. This script requires bash > "${min_bash_version}"."
+  echo -e ${RED}"Your bash version is "${RESET}${BASH_VERSION}
+  echo ""
+  exit 1;
+fi
+
+# Only in bash > 4.0, check `bash -version`for help
+declare -A projects
+
+CONFIG_FILE=deploy.conf
+
+if [[ -f $CONFIG_FILE ]]; then
+        . $CONFIG_FILE
+else
+
+  echo ""
+  echo -e ${GREEN}" Github / Git common promotion script "${RESET}
+  echo -e ${RED}" Missing deploy.conf configuration file!"${RESET}"."
+  echo ""
+  exit 1
+
+fi
+
+# Common color helpers
+
 YELLOW='\033[01;33m'  # bold yellow
 RED='\033[01;31m' # bold red
 GREEN='\033[01;32m' # green
 BLUE='\033[01;34m'  # blue
 RESET='\033[00;00m' # normal white
-
-APP_BASE_PATH='/home/tchap'
 
 if [ $# -lt 2 ]
 then
@@ -18,16 +50,27 @@ then
   exit 1
 fi  
 
-# Checking application is good
+# Checking that the project exists
+
 app=$1
 
-case $app in
-  "tuneefy") app="tuneefy";;
-  "panorame") app="panorame";;
-  *) echo -e " # "${RED}"ERROR"${RESET}" : Bad application ($app)"
+project_found=false
+# What project, sir ?
+for project_slug in "${!projects[@]}"; do
+  if [ "$app" = "$project_slug" ]
+  then
+    type=${command}${projects["$project_slug"]}
+    project_found=true
+  fi
+done
+
+# Naaaaay
+if ! $project_found
+then
+  echo -e " # "${RED}"ERROR"${RESET}" : Bad action name ($action)"
   echo ""
-  exit 1;;
-esac
+  exit 1
+fi
 
 # Checking environment is good
 env=$2
@@ -83,22 +126,27 @@ echo ""
 revision_safe=`git log -n 1 --pretty="format:%h"`
 WWW_PATH=${WWW_PATH}"-"${revision_safe}
 
-# Building minified JS if we have a minify script in admin/
-if [ -e ${ADMIN_PATH}"/minify.php" ]
+if [ "$type" == "standalone" ]
 then
-  echo -e " # "${RED}"Do you wish to build minified Javascript"${RESET}" [no] ?\c"
-  read yn
-  case $yn in
-      [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Building"${RESET}" minified JS :"
-              echo -e "   |  \__ "${BLUE}${DEPLOY_PATH}"/js/min/"${app}".min.js"${RESET}
-              cd ${ADMIN_PATH}
-              php minify.php > ${DEPLOY_PATH}/js/min/${app}.min.js
-              echo ""
-              echo -e " # "${GREEN}"Done. "${RESET}
-              echo "" ;;
-      * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
-          echo "" ;;
-  esac
+
+  # Building minified JS if we have a minify script in admin/
+  if [ -e ${ADMIN_PATH}"/minify.php" ]
+  then
+    echo -e " # "${RED}"Do you wish to build minified Javascript"${RESET}" [no] ?\c"
+    read yn
+    case $yn in
+        [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Building"${RESET}" minified JS :"
+                echo -e "   |  \__ "${BLUE}${DEPLOY_PATH}"/js/min/"${app}".min.js"${RESET}
+                cd ${ADMIN_PATH}
+                php minify.php > ${DEPLOY_PATH}/js/min/${app}.min.js
+                echo ""
+                echo -e " # "${GREEN}"Done. "${RESET}
+                echo "" ;;
+        * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
+            echo "" ;;
+    esac
+
+  fi
 
 fi
 
@@ -147,6 +195,40 @@ else
   mkdir ${WWW_PATH}
   rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
   
+  if [ "$type" == "symfony2" ]
+  then
+
+    cd ${WWW_PATH}
+
+    # Symfony2
+    echo ""
+    echo -e " # "${RED}"Do you wish to update vendors"${RESET}" [no] ?\c"
+    read yn
+    case $yn in
+        [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Updating"${RESET}" vendors via Composer :"
+                echo ""
+                php composer.phar self-update
+                php composer.phar update
+                echo ""
+                echo -e " # "${GREEN}"Done. "${RESET}
+                echo "" ;;
+         * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET} 
+            echo "" ;;
+    esac
+
+    echo -e " # "${GREEN}"Doing Symfony 2 Stuff"${RESET}" :"
+    echo ""
+
+    php app/console doctrine:schema:update 
+    php app/console cache:clear
+    php app/console cache:clear --env=prod
+    php app/console assets:install web --symlink
+    php app/console assetic:dump --env=prod --no-debug
+    chmod -R 777 app/cache app/logs
+    echo ""
+ 
+  fi
+
   echo -e " #"${GREEN}" Linking "${RESET}
   echo ""
 
@@ -161,12 +243,19 @@ fi
 
 
 # Restart Apache
-echo -e " #"${GREEN}" Restarting Apache ... "${RESET}
-echo ""
-sudo /root/apachereload.sh
-echo ""
+echo -e " # "${RED}"Do you wish to restart Apache 2"${RESET}" [no] ?\c"
+read yn
+case $yn in
+    [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Restarting Apache"${RESET}":"
+            echo ""
+            sudo /root/apachereload.sh
+            echo "" ;;
+    * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
+        echo "" ;;
+esac
 
 # Done
 echo -e ${RESET}
 echo -e " # "${GREEN}"Done. "${RESET}"Exiting."
 echo ""
+
