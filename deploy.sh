@@ -252,7 +252,8 @@ fi
 cd ${DEPLOY_PATH}
 echo "# CHANGELOG" > ${CHANGELOG_PATH}
 current_date=`git log -1 --format="%ad"`
-echo "# Last update : ${current_date}" > ${CHANGELOG_PATH}
+echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
+echo "" >> ${CHANGELOG_PATH}
 change_log=`git log --no-merges --date-order --date=short | \
     sed -e '/^commit.*$/d' | \
     awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
