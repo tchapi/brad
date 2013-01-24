@@ -250,12 +250,15 @@ CHANGELOG_PATH=${WWW_PATH}'/'${CHANGELOG_NAME}
 fi
 
 cd ${DEPLOY_PATH}
+echo "# CHANGELOG" > ${CHANGELOG_PATH}
+current_date=`git log -1 --format="%ad"`
+echo "# Last update : ${current_date}" > ${CHANGELOG_PATH}
 change_log=`git log --no-merges --date-order --date=short | \
     sed -e '/^commit.*$/d' | \
     awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
     sed -e 's/^Author: //g' | \
     sed -e 's/>Date:   \([0-9]*-[0-9]*-[0-9]*\)/>\t\1/g' | \
-    sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' > ${CHANGELOG_PATH}`
+    sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' >> ${CHANGELOG_PATH}`
 
 # Restart Apache
 echo -e " # "${RED}"Do you wish to restart Apache 2"${RESET}" [no] ?\c"
