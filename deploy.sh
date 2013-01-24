@@ -217,7 +217,7 @@ else
     echo -e " # "${GREEN}"Doing Symfony 2 Stuff"${RESET}" :"
     echo ""
 
-    php app/console doctrine:schema:update 
+    php app/console doctrine:schema:update --force # To be replaced with migrations later on 
     php app/console cache:clear
     php app/console cache:clear --env=prod
     php app/console assets:install web --symlink
