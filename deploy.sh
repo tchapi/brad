@@ -239,6 +239,22 @@ else
 
 fi
 
+# Update CHANGELOG.txt
+CHANGELOG_NAME='CHANGELOG.txt'
+if [ "$type" == "symfony2" ]
+then
+CHANGELOG_PATH=${WWW_PATH}'/web/'${CHANGELOG_NAME}
+elif [ "$type" == "standalone" ]
+then
+CHANGELOG_PATH=${WWW_PATH}'/'${CHANGELOG_NAME}
+fi
+
+change_log=`git log --no-merges --date-order --date=short | \
+    sed -e '/^commit.*$/d' | \
+    awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
+    sed -e 's/^Author: //g' | \
+    sed -e 's/>Date:   \([0-9]*-[0-9]*-[0-9]*\)/>\t\1/g' | \
+    sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' > ${CHANGELOG_PATH}`
 
 # Restart Apache
 echo -e " # "${RED}"Do you wish to restart Apache 2"${RESET}" [no] ?\c"
