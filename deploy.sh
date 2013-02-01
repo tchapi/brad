@@ -222,7 +222,7 @@ else
     php app/console cache:clear --env=prod
     php app/console assets:install web --symlink
     php app/console assetic:dump --env=prod --no-debug
-    chmod -R 777 app/cache app/logs
+    chmod -R 777 app/cache app/logs web/uploads
     echo ""
  
   fi
