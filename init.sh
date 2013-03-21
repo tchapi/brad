@@ -55,7 +55,7 @@ git ls-remote "$url" &>-
 if [ "$?" -ne 0 ]; then
   echo ""
   echo -e ${GREEN}" Project initialisation script "${RESET}
-  echo -e ${RED}" Error: "${RESET}"$url is not a valid url"
+  echo -e ${RED}" Error: "${RESET}"$url is not a valid GIT repository url"
   echo ""
   exit 1
 fi
