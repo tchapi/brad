@@ -51,7 +51,8 @@ name=$1
 url=$2
 
 # Check if url is a valid one
-if ! curl --output /dev/null --silent --head --fail "$url"; then
+git ls-remote "$url" &>-
+if [ "$?" -ne 0 ]; then
   echo ""
   echo -e ${GREEN}" Project initialisation script "${RESET}
   echo -e ${RED}" Error: "${RESET}"$url is not a valid url"
@@ -118,7 +119,7 @@ chmod 777 uploads
 # Summary
 
 echo -e ${RESET}
-echo -e " # "${GREEN}"Created environnements :"
+echo -e " # "${GREEN}"Created environnements :"${RESET}
 echo -e " |  - Staging "
 echo -e " |    "${YELLOW}"Deploy path : "${RESET}${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${name}/${STAGING_DIRECTORY}
 echo -e " |    "${YELLOW}" --> tracking branch "${RESET}${STAGING_BRANCH}${YELLOW}" of remote "${RESET}${url}
