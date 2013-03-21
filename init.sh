@@ -22,6 +22,22 @@ GREEN='\033[01;32m' # green
 BLUE='\033[01;34m'  # blue
 RESET='\033[00;00m' # normal white
 
+# Load configuration file
+CONFIG_FILE="$(dirname $0)/deploy.conf"
+
+if [[ -f $CONFIG_FILE ]]; then
+        . $CONFIG_FILE
+else
+
+  echo ""
+  echo -e ${GREEN}" Project initialisation script "${RESET}
+  echo -e ${RED}" Missing deploy.conf configuration file!"${RESET}"."
+  echo ""
+  exit 1
+
+fi
+
+# Check if we have the correct number of arguments
 if [ $# -lt 2 ]
 then
   echo ""
@@ -34,6 +50,7 @@ fi
 name=$1
 url=$2
 
+# Check if url is a valid one
 if ! curl --output /dev/null --silent --head --fail "$url"; then
   echo ""
   echo -e ${GREEN}" Project initialisation script "${RESET}
