@@ -110,7 +110,7 @@ echo ""
 cd ${DEPLOY_PATH}
 
 # Git all the way
-echo -e " #"${GREEN}" Checking out live branch from origin"${RESET}
+echo -e " #"${GREEN}" Checking out remote branch from origin"${RESET}
 echo ""
 echo "   | "`git reset --hard HEAD`
 echo "   | "`git pull origin`
