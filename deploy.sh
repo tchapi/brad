@@ -223,13 +223,13 @@ else
     php app/console assets:install web --symlink
     php app/console assetic:dump --env=prod --no-debug
 
-    # Ensure that cache, logs are writable
-    chmod -R 777 app/cache app/logs # web/uploads
-
     # Warming up caches
     php app/console cache:warmup
     php app/console cache:warmup --env=prod
 
+    # Ensure that cache, logs are writable
+    chmod -R 777 app/cache app/logs # web/uploads
+    
     echo ""
  
   fi
