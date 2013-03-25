@@ -81,8 +81,18 @@ then
   php composer.phar self-update
   php composer.phar install --prefer-dist
 
+  # web/uploads for apache uploads
   cd web
   ln -s ../../uploads uploads
+  chmod 777 uploads
+
+  # var/sessions for sessions storage
+  cd app
+  ln -s ../../var var
+  chmod 777 var
+  cd var
+  mkdir sessions
+  chmod 777 sessions
 
 fi
 
