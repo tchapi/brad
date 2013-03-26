@@ -5,14 +5,13 @@ Make easy atomic deployments from Github
 
 The package consists of two scripts : `init.sh` and `deploy.sh`, and a configuration file : `deploy.conf`.
 
-> NB : You will have to copy `deploy.conf.example` to `deploy.conf` for the scripts to work.
-> NB : You should as well make sure that `init.sh` and `deploy.sh` are executable, or run `chmod +x init.sh deploy.sh` in case
+> NB : You will have to copy `deploy.conf.example` to `deploy.conf` for the scripts to work. You should as well make sure that `init.sh` and `deploy.sh` are executable, or run `chmod +x init.sh deploy.sh` in case
 
 ## Initial configuration
 
 Before running anything, you have to configure your `APP_BASE_PATH` in the `deploy.conf` file. Just define the `APP_BASE_PATH` in this file like this :
 
-```
+```bash
 APP_BASE_PATH='/var'
 ```
 
@@ -84,7 +83,7 @@ Links (symbolic) to these folders are created respectively in `web/` and in `app
 
 Once a project has been initialized, you have to add it in the `deploy.conf` configuration file :
 
-```
+```bash
 projects["app_1"]="standalone"
 projects["my_symfony2_app"]="symfony2"
 ```                            
