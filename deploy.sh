@@ -110,7 +110,7 @@ echo ""
 cd ${DEPLOY_PATH}
 
 # Git all the way
-echo -e " #"${GREEN}" Checking out live branch from origin"${RESET}
+echo -e " #"${GREEN}" Checking out remote branch from origin"${RESET}
 echo ""
 echo "   | "`git reset --hard HEAD`
 echo "   | "`git pull origin`
@@ -228,9 +228,18 @@ else
 
     php app/console cache:clear
     php app/console cache:clear --env=prod
+
+    # Dump assetic assets
     php app/console assets:install web --symlink
     php app/console assetic:dump --env=prod --no-debug
-    chmod -R 777 app/cache app/logs web/uploads
+
+    # Warming up caches
+    php app/console cache:warmup
+    php app/console cache:warmup --env=prod
+
+    # Ensure that cache, logs are writable
+    chmod -R 777 app/cache app/logs # web/uploads
+    
     echo ""
  
   fi
@@ -288,7 +297,6 @@ case $yn in
 esac
 
 # Done
-echo -e ${RESET}
-echo -e " # "${GREEN}"Done. "${RESET}"Exiting."
+echo -e ${RESET}" # "${GREEN}"Done. "${RESET}"Exiting."
 echo ""
 
