@@ -217,6 +217,11 @@ else
     echo -e " # "${GREEN}"Doing Symfony 2 Stuff"${RESET}" :"
     echo ""
 
+    echo -e " #"${BLUE}" Upcoming changes to the schema : "${RESET}
+    echo ""
+    php app/console doctrine:schema:update --dump-sql
+    echo ""
+
     echo -e " # "${RED}"Do you wish to update the schema"${RESET}" [no] ?\c"
     read yn
     case $yn in
@@ -225,9 +230,6 @@ else
         * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
             echo "" ;;
     esac
-
-    php app/console cache:clear
-    php app/console cache:clear --env=prod
 
     # Dump assetic assets
     php app/console assets:install web --symlink
