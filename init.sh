@@ -88,7 +88,7 @@ then
 
   # var/sessions for sessions storage
   cd app
-  ln -s ../../var var
+  ln -s ../../var/beta var
   chmod 777 var
   cd var
   mkdir sessions
@@ -114,6 +114,15 @@ then
 
   cd web
   ln -s ../../uploads uploads
+  chmod 777 uploads
+
+  # var/sessions for sessions storage
+  cd app
+  ln -s ../../var/prod var
+  chmod 777 var
+  cd var
+  mkdir sessions
+  chmod 777 sessions
 
 fi
 
@@ -125,6 +134,9 @@ mkdir $name
 cd ${APP_BASE_PATH}/${WWW_DIRECTORY}/${name}
 mkdir uploads
 chmod 777 uploads
+
+mkdir var
+chmod 777 var
 
 # Summary
 
