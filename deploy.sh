@@ -204,6 +204,11 @@ else
                 echo ""
                 php composer.phar self-update
                 php composer.phar install
+
+                # Cleaning the mess since it is a deploy folder
+                rm -fR ${DEPLOY_PATH}/web/bundles
+                find ${DEPLOY_PATH}/app/cache/dev -delete
+
                 echo ""
                 echo -e " # "${GREEN}"Done. "${RESET}
                 echo "" ;;
