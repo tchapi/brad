@@ -197,10 +197,10 @@ else
 
     # Symfony2
     echo ""
-    echo -e " # "${RED}"Do you wish to install vendors"${RESET}" [no] ?\c"
+    echo -e " # "${RED}"Do you wish to update vendors"${RESET}" [no] ?\c"
     read yn
     case $yn in
-        [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Installing"${RESET}" vendors via Composer :"
+        [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Updating"${RESET}" vendors via Composer :"
                 echo ""
                 php composer.phar self-update
                 php composer.phar install
