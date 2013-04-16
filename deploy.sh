@@ -189,30 +189,39 @@ else
 
   echo -e " #"${GREEN}" Promoting "${RESET}${env}" environment to current release"
 
-  # Copy all files to the destination folder
-  mkdir ${WWW_PATH}
-  rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
-  
+  # Should we install the vendors before deploying ?
   if [ "$type" == "symfony2" ]
   then
 
-    cd ${WWW_PATH}
+    cd ${DEPLOY_PATH}
 
     # Symfony2
     echo ""
-    echo -e " # "${RED}"Do you wish to update vendors"${RESET}" [no] ?\c"
+    echo -e " # "${RED}"Do you wish to install vendors"${RESET}" [no] ?\c"
     read yn
     case $yn in
-        [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Updating"${RESET}" vendors via Composer :"
+        [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Installing"${RESET}" vendors via Composer :"
                 echo ""
                 php composer.phar self-update
-                php composer.phar update
+                php composer.phar install
                 echo ""
                 echo -e " # "${GREEN}"Done. "${RESET}
                 echo "" ;;
          * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET} 
             echo "" ;;
     esac
+  
+  fi
+
+  # Copy all files to the destination folder
+  mkdir ${WWW_PATH}
+  rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
+  
+  # Symfony 2 Stuff
+  if [ "$type" == "symfony2" ]
+  then
+
+    cd ${WWW_PATH}
 
     echo -e " # "${GREEN}"Doing Symfony 2 Stuff"${RESET}" :"
     echo ""
