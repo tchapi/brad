@@ -206,7 +206,7 @@ main(){
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
-  PREVIOUS_PATHS=`exec ls | sed 's|rel\-${env}\-[0-9]{4}\-[0-9]{2}\-[0-9]{2}\-\([0-9]+\)\-[a-zA-Z0-9]+\/|\1_&|p' | sort -n | cut -d_ -f2`
+  PREVIOUS_PATHS=`exec ls ${APP_BASE_PATH}/www/${app} | sed 's|rel\-${env}\-[0-9]{4}\-[0-9]{2}\-[0-9]{2}\-\([0-9]+\)\-[a-zA-Z0-9]+\/|\1_&|p' | sort -n | cut -d_ -f2`
   
   # Check user
   ack "Current user is" $(whoami)
@@ -285,7 +285,7 @@ build_js(){
 
 revert(){
 
-  LAST_PATH=`exec ls | sed 's|rel\-${env}\-[0-9]{4}\-[0-9]{2}\-[0-9]{2}\-\([0-9]+\)\-[a-zA-Z0-9]+\/|\1_&|p' | sort -n | tail -1 | cut -d_ -f2`
+  LAST_PATH=`exec ls ${APP_BASE_PATH}/www/${app} | sed 's|rel\-${env}\-[0-9]{4}\-[0-9]{2}\-[0-9]{2}\-\([0-9]+\)\-[a-zA-Z0-9]+\/|\1_&|p' | sort -n | tail -1 | cut -d_ -f2`
   indicate "Rollback path" ${LAST_PATH}
 
   ask "Are you sure you want to rollback (link)" "no"
@@ -382,7 +382,7 @@ deploy(){
           * ) said_no ;;
       esac
     fi
-    
+
     # Dump assetic assets
     php app/console assets:install web --symlink
     php app/console assetic:dump --env=prod --no-debug
@@ -451,15 +451,19 @@ update_changelog(){
   # Update CHANGELOG.txt
   CHANGELOG_NAME='CHANGELOG.txt'
 
+  if [ "$ROLLBACK" -eq 1 ]; then
+    BASE_CHANGELOG_PATH=${LAST_PATH}
+  else
+    BASE_CHANGELOG_PATH=${WWW_PATH}
+  fi
+  
   if [ "$type" == "symfony2" ]; then
-    CHANGELOG_PATH=${WWW_PATH}'/web/'${CHANGELOG_NAME}
+    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
   elif [ "$type" == "standalone" ]; then
-    CHANGELOG_PATH=${WWW_PATH}'/'${CHANGELOG_NAME}
+    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
   fi
 
   indicate "Writing CHANGELOG to" ${CHANGELOG_PATH}
-
-  cd ${DEPLOY_PATH}
 
   echo "# CHANGELOG" > ${CHANGELOG_PATH}
 
@@ -471,6 +475,8 @@ update_changelog(){
     echo "" >> ${CHANGELOG_PATH}
 
   else 
+
+    cd ${DEPLOY_PATH}
 
     current_date=`git log -1 --format="%ad"`
     echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
