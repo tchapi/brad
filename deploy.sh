@@ -401,11 +401,11 @@ deploy(){
 
 link_full(){
 
-  ask "Deployment is done — Do you wish to scalpel (link)" "no"
+  ask "Deployment is done — Do you wish to promote (link)" "no"
   read yn
   case $yn in
       [Yy]* ) said_yes "Linking"
-              ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
+              ln -sfvn ${WWW_PATH} ${WWW_LINK}
               notify_done ;;
        * ) said_no ;;
   esac
@@ -415,11 +415,11 @@ link_full(){
 
 link_scalpel(){
 
-  ask "Deployment is done — Do you wish to promote (link)" "no"
+  ask "Deployment is done — Do you wish to scalpel (link)" "no"
   read yn
   case $yn in
       [Yy]* ) said_yes "Linking"
-              ln -sfvn ${WWW_PATH} ${WWW_LINK}
+              ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
               notify_done ;;
        * ) said_no ;;
   esac
