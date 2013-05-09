@@ -226,12 +226,13 @@ main(){
 
   if [ $# -ge 3 ]; then 
     scalpel
+    link_scalpel
   else
     if [ "$ROLLBACK" = 1 ]; then
       revert
     else
       deploy
-      link
+      link_full
       if [ "$CLEANUP" = 1 ]; then
         cleanup
       fi
@@ -362,17 +363,14 @@ deploy(){
 
     cd ${WWW_PATH}
 
-    ack "Doing Symfony 2 Stuff"
-    echo ""
-
-    ack "Upcoming changes to the schema : "
-    echo ""
-    php app/console doctrine:schema:update --dump-sql
-    echo ""
-
+    ack "Upcoming changes to the schema"
     UPDATES=`php app/console doctrine:schema:update --dump-sql`
 
-    if ! [ "$UPDATES" -eq "Nothing to update - your database is already in sync with the current entity metadata." ]; then
+    echo ""
+    echo ${UPDATES}
+    echo ""
+    
+    if ! [ "$UPDATES" == "Nothing to update - your database is already in sync with the current entity metadata." ]; then
 
       ask "Do you wish to update the schema" "no"
       read yn
@@ -452,7 +450,7 @@ update_changelog(){
   # Update CHANGELOG.txt
   CHANGELOG_NAME='CHANGELOG.txt'
 
-  if [ "$ROLLBACK" -eq 1 ]; then
+  if [ $ROLLBACK -eq 1 ]; then
     BASE_CHANGELOG_PATH=${LAST_PATH}
   else
     BASE_CHANGELOG_PATH=${WWW_PATH}
@@ -468,7 +466,7 @@ update_changelog(){
 
   echo "# CHANGELOG" > ${CHANGELOG_PATH}
 
-  if [ "$ROLLBACK" -eq 1 ]; then
+  if [ $ROLLBACK -eq 1 ]; then
 
     NOW=$(date +"%c")
     echo "# Last update : ${NOW}" >> ${CHANGELOG_PATH}
