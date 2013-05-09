@@ -206,7 +206,7 @@ main(){
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
-  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n 's|rel\-beta\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp' | sort -n | cut -d_ -f2`
+  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n "s|rel\-beta\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
   
   # Check user
   ack "Current user is" $(whoami)
@@ -287,8 +287,8 @@ build_js(){
 revert(){
 
 
-  LAST_PATH=`ls $APP_BASE_PATH/www/$app | sed -n 's|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp' | sort -n | tail -1 | cut -d_ -f2`
-  echo "ls ${APP_BASE_PATH}/www/${app} | sed -n 's|rel\-beta\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp' | sort -n | tail -1 | cut -d_ -f2"
+  LAST_PATH=`ls $APP_BASE_PATH/www/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -1 | cut -d_ -f2`
+  
   indicate "Rollback path" ${LAST_PATH}
 
   ask "Are you sure you want to rollback (link)" "no"
