@@ -1,4 +1,4 @@
-# Deployement script for GitHub
+# Deployement script for GitHub / Bitbucket / Any remote Git server
 #!/bin/bash
 
 # Common color helpers
@@ -8,156 +8,303 @@ GREEN='\033[01;32m' # green
 BLUE='\033[01;34m'  # blue
 RESET='\033[00;00m' # normal white
 
-# Check major bash version
-bash_version=${BASH_VERSION%%[^0-9]*}
-min_bash_version=4
-
-if [ "$bash_version" -lt "$min_bash_version" ]
-then
-  echo ""
-  echo "Oh, ... bugger. This script requires bash > "${min_bash_version}"."
-  echo -e ${RED}"Your bash version is "${RESET}${BASH_VERSION}
-  echo ""
-  exit 1;
-fi
-
-# Only in bash > 4.0, check `bash -version`for help
-declare -A projects
-
-# Load configuration file
+# Configuration file
 CONFIG_FILE="$(dirname $0)/deploy.conf"
 
-if [[ -f $CONFIG_FILE ]]; then
-        . $CONFIG_FILE
-else
+# Arguments
+ARGS=$(getopt -o "hrc" -l "help,rollback,cleanup" -n $0 -- "$@");
+
+# 
+# Notifications 
+#
+
+ack(){
+  echo -e " # "${GREEN}"$1 : "${RESET}"$2"
+}
+indicate(){
+  echo -e " # "${BLUE}"$1 : "${RESET}"$2"
+}
+warn(){
+  echo -e " # "${YELLOW}"$1 : "${RESET}"$2"
+}
+ask(){
+  echo -e " # "${RED}"$1"${RESET}" [$2] ?\c"
+}
+said_yes(){
+  echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" $1"${RESET}":"
+  echo ""
+}
+said_no(){
+  echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
+  echo ""
+}
+notify_error(){
+
+  echo -e " # "${RED}"ERROR"${RESET}" : $1"
+  echo ""
+
+}
+notify_done(){
 
   echo ""
-  echo -e ${GREEN}" Github / Git common promotion script "${RESET}
-  echo -e ${RED}" Missing deploy.conf configuration file!"${RESET}"."
+  echo -e ${RESET}" # "${GREEN}"Done. "${RESET}
   echo ""
-  exit 1
 
-fi
+}
 
-# Do we have enough arguments ?
-if [ $# -lt 2 ]
-then
+usage(){
+
+  echo -e " # "${GREEN}"Usage:"${RESET}" `basename $0` [-h] [-rc] application environment [file 1 file2 ...]"
+  echo -e ${BLUE}"     -h --help "${RESET}"prints this help message"
+  echo -e ${BLUE}"     -r --rollback "${RESET}"rollbacks to the previous version"
+  echo -e ${BLUE}"     -c --cleanup "${RESET}"cleans all previous versions upon deployment"
   echo ""
-  echo -e ${GREEN}" Github / Git common promotion script "${RESET}
-  echo " Usage: $0 (application) (env) [file1 file2 ...]"
+
+}
+
+title(){
+
+  echo -e ""${RESET}
+  echo    " # ---------------------------------- #"
+  echo -e " # "${GREEN}"Remote Git common promotion script"${RESET}" #"
+  echo    " # ---------------------------------- #"
   echo ""
-  exit 1
-fi  
 
-# Checking that the project exists
-app=$1
+}
 
-project_found=false
-# What project, sir ?
-for project_slug in "${!projects[@]}"; do
-  if [ "$app" = "$project_slug" ]
-  then
-    type=${command}${projects["$project_slug"]}
-    project_found=true
+
+# Check major bash version
+min_bash_version=4
+
+check_bash_version(){
+
+  bash_version=${BASH_VERSION%%[^0-9]*}
+
+  if [ "$bash_version" -lt "$min_bash_version" ]; then
+    echo ""
+    indicate "Your bash version" ${BASH_VERSION}
+    notify_error "Oh, ... bugger. This script requires bash > "${min_bash_version}"."
+    exit 1
   fi
-done
 
-# Naaaaay
-if ! $project_found
-then
-  echo -e " # "${RED}"ERROR"${RESET}" : Bad action name ($action)"
+}
+
+check_bash_version
+# Associative arrays only in bash > 4.0, check `bash -version`for help
+unset projects
+declare -A projects
+
+
+# -------------------------------------
+# -------------------------------------
+
+load_config(){
+
+  indicate "Loading configuration" ${CONFIG_FILE}
+
+  # Load configuration file
+  if [[ -f $CONFIG_FILE ]]; then
+          source $CONFIG_FILE
+  else
+
+    notify_error "Missing configuration file!"
+    exit 1
+
+  fi
+
+}
+
+parse(){
+
+  # Bad arguments
+  if [ $? -ne 0 ]; then
+    notify_error "Invalid options : #@"
+    usage
+    exit 1
+  fi
+
+  # Magic
+  eval set -- "$ARGS";
+
+  # Parse command line options.
+  while true; do
+    case "$1" in
+      -h|--help)
+        shift;
+        usage
+        exit 0
+        ;;
+      -r|--rollback)
+        shift;
+        ROLLBACK=1
+        ;;
+      -c|--cleanup)
+        shift;
+        CLEANUP=1
+        ;;
+      --)
+        shift;
+        break;
+        ;;
+    esac
+  done
+
+  # Do we have enough arguments ?
+  if [ $# -lt 2 ]; then
+    notify_error "You either miss an application name or the environment name"
+    usage
+    exit 1
+  fi
+
+  if [ $# -ge 3 ] && [ $ROLLBACK -eq 1 ]; then
+    notify_error "Cannot rollback single files"
+    usage
+    exit 1
+  fi
+  
+  app=$1
+  # Checking that the project exists
+  project_found=false
+  # What project, sir ?
+  for project_slug in "${!projects[@]}"; do
+    if [ "$app" = "$project_slug" ]; then
+      type=${command}${projects["$project_slug"]}
+      project_found=true
+    fi
+  done
+
+  # Naaaaay
+  if ! $project_found; then
+    notify_error "Bad application name ($app)"
+    exit 1
+  fi
+
+  env=$2
+  # Checking environment is good
+  case $env in
+    "prod") env="prod";;
+    "beta") env="beta";;
+    *) notify_error "Bad environment ($env)"
+       exit 1;;
+  esac
+
+}
+
+
+main(){
+
+  load_config
   echo ""
-  exit 1
-fi
 
-# Checking environment is good
-env=$2
+  parse
 
-case $env in
-  "prod") env="prod";;
-  "beta") env="beta";;
-  "poc")  env="poc";;
-  *) echo -e " # "${RED}"ERROR"${RESET}" : Bad environment ($env)"
+  date_today=`date '+%Y-%m-%d'`
+  timestamp=`date '+%s'`
+  DEPLOY_PATH=${APP_BASE_PATH}'/deploy/'${app}'/'${env}
+  WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
+  WWW_LINK=${APP_BASE_PATH}'/www/'${app}'/'${env}
+
+  ADMIN_PATH=${DEPLOY_PATH}'/admin'
+
+  PREVIOUS_PATHS=`exec ls | sed 's|rel\-${env}\-[0-9]{4}\-[0-9]{2}\-[0-9]{2}\-\([0-9]+\)\-[a-zA-Z0-9]+\/|\1_&|p' | sort -n | cut -d_ -f2`
+  
+  # Check user
+  ack "Current user is" $(whoami)
+
+  indicate "Deployment path" ${DEPLOY_PATH}
+  indicate "Release www path" ${WWW_PATH}
+  indicate "Live www path" ${WWW_LINK}
+
+  # Go into the deploy directory
+  warn "Changing directory to" ${DEPLOY_PATH}
   echo ""
-  exit 1;;
-esac
+  cd ${DEPLOY_PATH}
 
-date_today=`date '+%Y-%m-%d'`
-timestamp=`date '+%s'`
-DEPLOY_PATH=${APP_BASE_PATH}'/deploy/'${app}'/'${env}
-WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
-WWW_LINK=${APP_BASE_PATH}'/www/'${app}'/'${env}
+  git_pull
 
-ADMIN_PATH=${DEPLOY_PATH}'/admin'
+  if [ "$type" == "standalone" ]; then build_js; fi
 
-echo -e ""${RESET}
-echo " # ------------------------- #"
-echo " # "${app}" promotion script #"
-echo " # ------------------------- #"
-echo ""
+  if [ $# -ge 3 ]; then 
+    scalpel
+  else
+    if [ "$ROLLBACK" = 1 ]; then
+      revert
+    else
+      deploy
+      link
+      if [ "$CLEANUP" = 1 ]; then
+        cleanup
+      fi
+    fi
+  fi
 
-# Check user
-echo -e " #"${GREEN}" Current user is : "${RESET}$(whoami)
-echo ""
+  update_changelog
+  restart_apache
 
-echo -e " #"${BLUE}" Deployment path : "${RESET}${DEPLOY_PATH}
-echo -e " #"${BLUE}" Release www path : "${RESET}${WWW_PATH}
-echo -e " #"${BLUE}" Live www path : "${RESET}${WWW_LINK}
+  notify_done
 
-# Go into the deploy directory
-echo -e " #"${YELLOW}" Changing directory "${RESET}" to "${DEPLOY_PATH} 
-echo ""
-cd ${DEPLOY_PATH}
+}
 
-# Git all the way
-echo -e " #"${GREEN}" Checking out remote branch from origin"${RESET}
-echo ""
-echo "   | "`git reset --hard HEAD`
-echo "   | "`git pull origin`
-echo "   | "`git status`
-echo ""
+git_pull(){
 
-revision=`git log -n 1 --pretty="format:%h %ci"`
-echo -e " #"${BLUE}" Repository updated to revision : "${RESET}${revision}
-echo ""
+  # Git all the way
+  ack "Checking out remote branch from origin"
+  echo ""
+  echo "   | "`git reset --hard HEAD`
+  echo "   | "`git pull origin`
+  echo "   | "`git status`
+  echo ""
 
-revision_safe=`git log -n 1 --pretty="format:%h"`
-WWW_PATH=${WWW_PATH}"-"${revision_safe}
+  revision=`git log -n 1 --pretty="format:%h %ci"`
+  indicate "Repository updated to revision" ${revision}
+  echo ""
 
-if [ "$type" == "standalone" ]
-then
+  revision_safe=`git log -n 1 --pretty="format:%h"`
+  WWW_PATH=${WWW_PATH}"-"${revision_safe}
+
+}
+
+build_js(){
 
   # Building minified JS if we have a minify script in admin/
-  if [ -e ${ADMIN_PATH}"/minify.php" ]
-  then
-    echo -e " # "${RED}"Do you wish to build minified Javascript"${RESET}" [no] ?\c"
+  if [ -e ${ADMIN_PATH}"/minify.php" ]; then
+    ask "Do you wish to build minified Javascript" "no"
     read yn
     case $yn in
-        [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Building"${RESET}" minified JS :"
-                echo -e "   |  \__ "${BLUE}${DEPLOY_PATH}"/js/min/"${app}".min.js"${RESET}
+        [Yy]* ) said_yes "Building minified JS"
+                indicate "Minified JS Path" ${DEPLOY_PATH}"/js/min/"${app}".min.js"
                 cd ${ADMIN_PATH}
                 php minify.php > ${DEPLOY_PATH}/js/min/${app}.min.js
-                echo ""
-                echo -e " # "${GREEN}"Done. "${RESET}
-                echo "" ;;
-        * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
-            echo "" ;;
+                notify_done ;;
+        * ) said_no ;;
     esac
 
   fi
 
-fi
+}
 
-#
-# Do we promote live the whole branch or just files ?
-#
-if [ $# -ge 3 ]
-then
+revert(){
+
+  LAST_PATH=`exec ls | sed 's|rel\-${env}\-[0-9]{4}\-[0-9]{2}\-[0-9]{2}\-\([0-9]+\)\-[a-zA-Z0-9]+\/|\1_&|p' | sort -n | tail -1 | cut -d_ -f2`
+  indicate "Rollback path" ${LAST_PATH}
+
+  ask "Are you sure you want to rollback (link)" "no"
+  read yn
+  case $yn in
+      [Yy]* ) said_yes "Rollbacking"
+              ln -sfvn ${LAST_PATH} ${WWW_LINK}
+              notify_done ;;
+       * ) said_no ;;
+  esac
+
+}
+
+scalpel(){
 
   SCALPEL_PATH=${WWW_PATH}"_scalpel"
 
-  echo -e " #"${GREEN}" Duplicating"${RESET}" actual "${env}" environment into "${SCALPEL_PATH}
-  echo ""
+  indicate "Duplicating actual "${env}" environment into" ${SCALPEL_PATH}
+
   # Copy all files from current release to a new release
   mkdir ${SCALPEL_PATH}
   rsync -rlpt ${WWW_LINK}/. ${SCALPEL_PATH}/.
@@ -168,40 +315,30 @@ then
   
   # Checking we have files and copying
   for x in "$@"; do 
-    if [ -e ${DEPLOY_PATH}"/"$x ]
-    then
+    if [ -e ${DEPLOY_PATH}"/"$x ]; then
       echo -e "    | "$x
       rsync -rlptv --inplace ${DEPLOY_PATH}/$x ${SCALPEL_PATH}/$x
     fi
   done
-  
-  echo ""
-  echo -e " #"${GREEN}" Linking "${RESET}
 
-  # Link
-  ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
+}
 
-  echo ""
-  echo -e " # "${GREEN}"Done. "${RESET}
-  echo ""
+deploy(){
 
-else
-
-  echo -e " #"${GREEN}" Promoting "${RESET}${env}" environment to current release"
+  warn "Promoting environment to current release" ${env}
 
   # Should we install the vendors before deploying ?
-  if [ "$type" == "symfony2" ]
-  then
+  if [ "$type" == "symfony2" ]; then
 
     cd ${DEPLOY_PATH}
 
     # Symfony2
     echo ""
-    echo -e " # "${RED}"Do you wish to update vendors"${RESET}" [no] ?\c"
+    ask "Do you wish to update vendors" "no"
     read yn
     case $yn in
-        [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Updating"${RESET}" vendors via Composer :"
-                echo ""
+        [Yy]* ) said_yes "Updating vendors via Composer"
+
                 php composer.phar self-update
                 php composer.phar install
 
@@ -209,11 +346,8 @@ else
                 rm -fR ${DEPLOY_PATH}/web/bundles
                 find ${DEPLOY_PATH}/app/cache/dev -delete
 
-                echo ""
-                echo -e " # "${GREEN}"Done. "${RESET}
-                echo "" ;;
-         * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET} 
-            echo "" ;;
+                notify_done ;;
+         * ) said_no ;;
     esac
   
   fi
@@ -223,28 +357,32 @@ else
   rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
   
   # Symfony 2 Stuff
-  if [ "$type" == "symfony2" ]
-  then
+  if [ "$type" == "symfony2" ]; then
 
     cd ${WWW_PATH}
 
-    echo -e " # "${GREEN}"Doing Symfony 2 Stuff"${RESET}" :"
+    ack "Doing Symfony 2 Stuff"
     echo ""
 
-    echo -e " #"${BLUE}" Upcoming changes to the schema : "${RESET}
+    ack "Upcoming changes to the schema : "
     echo ""
     php app/console doctrine:schema:update --dump-sql
     echo ""
 
-    echo -e " # "${RED}"Do you wish to update the schema"${RESET}" [no] ?\c"
-    read yn
-    case $yn in
-        [Yy]* ) php app/console doctrine:schema:update --force # To be replaced with migrations later on ?
-                echo "" ;;
-        * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
-            echo "" ;;
-    esac
+    UPDATES=`php app/console doctrine:schema:update --dump-sql`
 
+    if ! [ "$UPDATES" -eq "Nothing to update - your database is already in sync with the current entity metadata." ]; then
+
+      ask "Do you wish to update the schema" "no"
+      read yn
+      case $yn in
+          [Yy]* ) said_yes "Updating schema"
+                  php app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  echo "" ;;
+          * ) said_no ;;
+      esac
+    fi
+    
     # Dump assetic assets
     php app/console assets:install web --symlink
     php app/console assetic:dump --env=prod --no-debug
@@ -260,59 +398,111 @@ else
  
   fi
 
-  echo -e " #"${GREEN}" Linking "${RESET}
-  echo ""
+}
 
-  # Link
-  ln -sfvn ${WWW_PATH} ${WWW_LINK}
+link_full(){
 
-  echo ""
-  echo -e " # "${GREEN}"Done. "${RESET}
-  echo ""
+  ask "Deployment is done — Do you wish to scalpel (link)" "no"
+  read yn
+  case $yn in
+      [Yy]* ) said_yes "Linking"
+              ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
+              notify_done ;;
+       * ) said_no ;;
+  esac
 
-fi
+}
 
-# Update CHANGELOG.txt
-CHANGELOG_NAME='CHANGELOG.txt'
 
-if [ "$type" == "symfony2" ]
-then
-  CHANGELOG_PATH=${WWW_PATH}'/web/'${CHANGELOG_NAME}
-elif [ "$type" == "standalone" ]
-then
-  CHANGELOG_PATH=${WWW_PATH}'/'${CHANGELOG_NAME}
-fi
+link_scalpel(){
 
-echo -e " #"${GREEN}" Writing"${RESET}" CHANGELOG "${GREEN}"to "${RESET}${CHANGELOG_PATH}
-echo ""
+  ask "Deployment is done — Do you wish to promote (link)" "no"
+  read yn
+  case $yn in
+      [Yy]* ) said_yes "Linking"
+              ln -sfvn ${WWW_PATH} ${WWW_LINK}
+              notify_done ;;
+       * ) said_no ;;
+  esac
 
-cd ${DEPLOY_PATH}
+}
 
-echo "# CHANGELOG" > ${CHANGELOG_PATH}
-current_date=`git log -1 --format="%ad"`
-echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
-echo "" >> ${CHANGELOG_PATH}
+cleanup(){
 
-change_log=`git log --no-merges --date-order --date=rfc | \
-  sed -e '/^commit.*$/d' | \
-  awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
-  sed -e 's/^Author: //g' | \
-  sed -e 's/>Date:   \(.*\)/>\t\1/g' | \
-  sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' >> ${CHANGELOG_PATH}`
+  indicate "Rollback path" ${LAST_PATH}
+  warn "All these paths will be permanently deleted" ${PREVIOUS_PATHS}
 
-# Restart Apache
-echo -e " # "${RED}"Do you wish to restart Apache 2"${RESET}" [no] ?\c"
-read yn
-case $yn in
-    [Yy]* ) echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" Restarting Apache"${RESET}":"
-            echo ""
-            sudo /root/apachereload.sh
-            echo "" ;;
-    * ) echo -e "   | "$(whoami)" said "${RED}"No. "${RESET}
-        echo "" ;;
-esac
+  ask "Are you sure you want to cleanup" "no"
+  read yn
+  case $yn in
+      [Yy]* ) said_yes "Cleaning up"
+              for f in $PREVIOUS_PATHS
+              do
+                rm -fR $f
+              done
+              notify_done ;;
+       * ) said_no ;;
+  esac
 
-# Done
-echo -e ${RESET}" # "${GREEN}"Done. "${RESET}"Exiting."
-echo ""
+}
 
+update_changelog(){
+
+  # Update CHANGELOG.txt
+  CHANGELOG_NAME='CHANGELOG.txt'
+
+  if [ "$type" == "symfony2" ]; then
+    CHANGELOG_PATH=${WWW_PATH}'/web/'${CHANGELOG_NAME}
+  elif [ "$type" == "standalone" ]; then
+    CHANGELOG_PATH=${WWW_PATH}'/'${CHANGELOG_NAME}
+  fi
+
+  indicate "Writing CHANGELOG to" ${CHANGELOG_PATH}
+
+  cd ${DEPLOY_PATH}
+
+  echo "# CHANGELOG" > ${CHANGELOG_PATH}
+
+  if [ "$ROLLBACK" -eq 1 ]; then
+
+    NOW=$(date +"%c")
+    echo "# Last update : ${NOW}" >> ${CHANGELOG_PATH}
+    echo "# ! Site is now in ROLLBACKED state !" >> ${CHANGELOG_PATH}
+    echo "" >> ${CHANGELOG_PATH}
+
+  else 
+
+    current_date=`git log -1 --format="%ad"`
+    echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
+    echo "" >> ${CHANGELOG_PATH}
+
+    change_log=`git log --no-merges --date-order --date=rfc | \
+      sed -e '/^commit.*$/d' | \
+      awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
+      sed -e 's/^Author: //g' | \
+      sed -e 's/>Date:   \(.*\)/>\t\1/g' | \
+      sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' >> ${CHANGELOG_PATH}`
+
+  fi
+
+  notify_done
+
+}
+
+restart_apache(){
+
+  # Restart Apache
+  ask "Do you wish to restart Apache 2" "no"
+  read yn
+  case $yn in
+      [Yy]* ) said_yes "Restarting Apache"
+              sudo /root/apachereload.sh
+              notify_done ;;
+      * ) said_no ;;
+  esac
+
+}
+
+# Launches :
+title
+main
