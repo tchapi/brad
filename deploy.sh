@@ -287,7 +287,7 @@ build_js(){
 revert(){
 
 
-  LAST_PATH=`ls $APP_BASE_PATH/www/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -1 | cut -d_ -f2`
+  LAST_PATH=`ls $APP_BASE_PATH/www/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
   
   indicate "Rollback path" ${LAST_PATH}
 
