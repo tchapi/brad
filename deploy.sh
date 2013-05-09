@@ -156,7 +156,7 @@ parse(){
     exit 1
   fi
 
-  if [ $# -ge 3 ] && [ $ROLLBACK -eq 1 ]; then
+  if [ $# -ge 3 ] && [ "$ROLLBACK" = 1 ]; then
     notify_error "Cannot rollback single files"
     usage
     exit 1
@@ -450,7 +450,7 @@ update_changelog(){
   # Update CHANGELOG.txt
   CHANGELOG_NAME='CHANGELOG.txt'
 
-  if [ $ROLLBACK -eq 1 ]; then
+  if [ "$ROLLBACK" = 1 ]; then
     BASE_CHANGELOG_PATH=${LAST_PATH}
   else
     BASE_CHANGELOG_PATH=${WWW_PATH}
@@ -466,7 +466,7 @@ update_changelog(){
 
   echo "# CHANGELOG" > ${CHANGELOG_PATH}
 
-  if [ $ROLLBACK -eq 1 ]; then
+  if [ "$ROLLBACK" = 1 ]; then
 
     NOW=$(date +"%c")
     echo "# Last update : ${NOW}" >> ${CHANGELOG_PATH}
