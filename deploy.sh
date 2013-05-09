@@ -206,7 +206,7 @@ main(){
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
-  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n 's|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\)\-[a-zA-Z0-9]*\/|\1_&|p' | sort -n | cut -d_ -f2`
+  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n 's|rel\-beta\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp' | sort -n | cut -d_ -f2`
   
   # Check user
   ack "Current user is" $(whoami)
@@ -220,17 +220,17 @@ main(){
   echo ""
   cd ${DEPLOY_PATH}
 
-  git_pull
-
-  if [ "$type" == "standalone" ]; then build_js; fi
+  if [ "$type" == "standalone" ] && ! [ "$ROLLBACK" = 1] ; then build_js; fi
 
   if [ $# -ge 3 ]; then 
+    git_pull
     scalpel
     link_scalpel
   else
     if [ "$ROLLBACK" = 1 ]; then
       revert
     else
+      git_pull
       deploy
       link_full
       if [ "$CLEANUP" = 1 ]; then
@@ -287,7 +287,8 @@ build_js(){
 revert(){
 
 
-  LAST_PATH=`ls ${APP_BASE_PATH}/www/${app} | sed -n 's|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\)\-[a-zA-Z0-9]*\/|\1_&|p' | sort -n | tail -1 | cut -d_ -f2`
+  LAST_PATH=`ls $APP_BASE_PATH/www/$app | sed -n 's|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp' | sort -n | tail -1 | cut -d_ -f2`
+  echo "ls ${APP_BASE_PATH}/www/${app} | sed -n 's|rel\-beta\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp' | sort -n | tail -1 | cut -d_ -f2"
   indicate "Rollback path" ${LAST_PATH}
 
   ask "Are you sure you want to rollback (link)" "no"
