@@ -19,19 +19,19 @@ ARGS=$(getopt -o "hrc" -l "help,rollback,cleanup" -n $0 -- "$@");
 #
 
 ack(){
-  echo -e " # "${GREEN}"$1 : "${RESET}"$2"
+  echo -e " # "${GREEN}"$1"${RESET}" : $2"
 }
 indicate(){
-  echo -e " # "${BLUE}"$1 : "${RESET}"$2"
+  echo -e " # "${BLUE}"$1"${RESET}" : $2"
 }
 warn(){
-  echo -e " # "${YELLOW}"$1 : "${RESET}"$2"
+  echo -e " # "${YELLOW}"$1"${RESET}" : $2"
 }
 ask(){
   echo -e " # "${RED}"$1"${RESET}" [$2] ?\c"
 }
 said_yes(){
-  echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" $1"${RESET}":"
+  echo -e "   | "$(whoami)" said "${GREEN}"Yes"${RESET}"."${GREEN}" $1"${RESET}" :"
   echo ""
 }
 said_no(){
