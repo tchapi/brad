@@ -408,7 +408,7 @@ link_full(){
   case $yn in
       [Yy]* ) said_yes "Linking"
               ln -sfvn ${WWW_PATH} ${WWW_LINK}
-              notify_done ;;
+             ;;
        * ) said_no ;;
   esac
 
@@ -422,7 +422,7 @@ link_scalpel(){
   case $yn in
       [Yy]* ) said_yes "Linking"
               ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
-              notify_done ;;
+              ;;
        * ) said_no ;;
   esac
 
@@ -430,8 +430,10 @@ link_scalpel(){
 
 cleanup(){
 
-  indicate "Rollback path" ${LAST_PATH}
-  warn "All these paths will be permanently deleted" ${PREVIOUS_PATHS}
+  warn "All these paths will be permanently deleted"
+  for f in $PREVIOUS_PATHS; do
+    warn "${app} ($env)" $f
+  done
 
   ask "Are you sure you want to cleanup" "no"
   read yn
@@ -439,9 +441,13 @@ cleanup(){
       [Yy]* ) said_yes "Cleaning up"
               for f in $PREVIOUS_PATHS
               do
-                rm -fR $f
+                PATH_TO_DELETE=${APP_BASE_PATH}'/www/'${app}/$f
+                if ! [ $PATH_TO_DELETE = $WWW_PATH ]; then
+                  echo -e "   | "${RED}"Removing "${RESET}"$PATH_TO_DELETE"
+                  rm -fR $PATH_TO_DELETE
+                fi
               done
-              notify_done ;;
+              ;;
        * ) said_no ;;
   esac
 
@@ -492,8 +498,6 @@ update_changelog(){
 
   fi
 
-  notify_done
-
 }
 
 restart_apache(){
@@ -504,7 +508,7 @@ restart_apache(){
   case $yn in
       [Yy]* ) said_yes "Restarting Apache"
               sudo /root/apachereload.sh
-              notify_done ;;
+              ;;
       * ) said_no ;;
   esac
 
