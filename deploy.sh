@@ -408,7 +408,7 @@ link_full(){
   case $yn in
       [Yy]* ) said_yes "Linking"
               ln -sfvn ${WWW_PATH} ${WWW_LINK}
-             ;;
+              echo "";;
        * ) said_no ;;
   esac
 
@@ -422,7 +422,7 @@ link_scalpel(){
   case $yn in
       [Yy]* ) said_yes "Linking"
               ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
-              ;;
+              echo "";;
        * ) said_no ;;
   esac
 
@@ -447,6 +447,7 @@ cleanup(){
                   rm -fR $PATH_TO_DELETE
                 fi
               done
+              echo ""
               ;;
        * ) said_no ;;
   esac
@@ -497,6 +498,8 @@ update_changelog(){
       sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' >> ${CHANGELOG_PATH}`
 
   fi
+
+  echo ""
 
 }
 
