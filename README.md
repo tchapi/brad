@@ -1,7 +1,7 @@
-# Deployment scripts for Github / Git
+# Deployment scripts from a remote Git server
 - - -
 
-Make easy atomic deployments from Github
+Make easy atomic deployments from Github / Bitbucket, or any remote Git server
 
 The package consists of two scripts : `init.sh` and `deploy.sh`, and a configuration file : `deploy.conf`.
 
@@ -98,7 +98,7 @@ Deploying an application is easy :
 $ ./deploy.sh my_app environment
 ```
 
-... where `my_app` is the name of the app previously initialized, and where environnement can be one of :
+... where `my_app` (the first argument) is the name of the app previously initialized, and where environnement (second argument) can be one of :
 
   - beta (staging area)
   - prod (live environment)
@@ -111,6 +111,42 @@ You can deploy a single file  :
 $ ./deploy.sh my_app environment [file1 file2 ... ]
 ```
 In this case, the previous production or staging release directory will be copied to a new release directory, and the file(s) will be replaced _in situ_ in this new directory.
+
+## Rollbacking to a previous deployement
+
+If you haven't deleted the previous deployment directories, it is possible to rollback to a previous instance of your application. This only applies to the application itself and not to the database schema or sessions / uploads, for instance.
+
+```bash
+$ ./deploy.sh --rollback my_app environment
+```
+or 
+```bash
+$ ./deploy.sh -r my_app environment
+```
+
+> NB : As per the _getopt_ flavor, the options can be put anywhere in the command (after or before arguments).
+
+This will link back the `www/prod` or `www/beta` folder to the previous instance of the application, if found.
+
+> NB : It is not possible to rollback to a scalpel instance, and other supplementary arguments such as files are not valid.
+
+## Cleaning up previous deployment folders when deploying
+
+When deploying often, you will probably clutter your `www`folder with previous unnecessary instances. You can perform a deployment with a final cleanup of the old ones with this simple command :
+
+```bash
+$ ./deploy.sh --cleanup my_app environment
+```
+or 
+```bash
+$ ./deploy.sh -c my_app environment
+```
+
+> NB :As per the _getopt_ flavor, the options can be put anywhere in the command (after or before arguments).
+
+This will deploy your application normally, AND `rm -fR` all the non-linked deployment folders in `www` corresponding to the environment you're deploying.
+
+> NB : It is not possible to cleanup and rollback at the same time, obviously
 
 ## Deploying easily from a remote client
 

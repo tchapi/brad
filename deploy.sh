@@ -276,7 +276,7 @@ build_js(){
                 indicate "Minified JS Path" ${DEPLOY_PATH}"/js/min/"${app}".min.js"
                 cd ${ADMIN_PATH}
                 php minify.php > ${DEPLOY_PATH}/js/min/${app}.min.js
-                notify_done ;;
+                echo "" ;;
         * ) said_no ;;
     esac
 
@@ -290,16 +290,25 @@ revert(){
   LAST_PATH=`ls $APP_BASE_PATH/www/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
   LAST_PATH=${APP_BASE_PATH}'/www/'${app}/${LAST_PATH}
   
-  indicate "Rollback path" ${LAST_PATH}
+  if ! [ "$LAST_PATH" = "" ]; then
 
-  ask "Are you sure you want to rollback (link)" "no"
-  read yn
-  case $yn in
-      [Yy]* ) said_yes "Rollbacking"
-              ln -sfvn ${LAST_PATH} ${WWW_LINK}
-              notify_done ;;
-       * ) said_no ;;
-  esac
+    indicate "Rollback path" ${LAST_PATH}
+
+    ask "Are you sure you want to rollback (link)" "no"
+    read yn
+    case $yn in
+        [Yy]* ) said_yes "Rollbacking"
+                ln -sfvn ${LAST_PATH} ${WWW_LINK}
+                echo "" ;;
+         * ) said_no ;;
+    esac
+
+  else
+
+    notify_error "No previous instance to rollback to, exiting."
+    exit 1
+
+  fi
 
 }
 
@@ -350,7 +359,7 @@ deploy(){
                 rm -fR ${DEPLOY_PATH}/web/bundles
                 find ${DEPLOY_PATH}/app/cache/dev -delete
 
-                notify_done ;;
+                echo "" ;;
          * ) said_no ;;
     esac
   
@@ -422,7 +431,7 @@ link_scalpel(){
   case $yn in
       [Yy]* ) said_yes "Linking"
               ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
-              echo "";;
+              echo "" ;;
        * ) said_no ;;
   esac
 
@@ -447,8 +456,7 @@ cleanup(){
                   rm -fR $PATH_TO_DELETE
                 fi
               done
-              echo ""
-              ;;
+              echo "" ;;
        * ) said_no ;;
   esac
 
