@@ -142,7 +142,7 @@ or
 $ ./deploy.sh -c my_app environment
 ```
 
-> NB :As per the _getopt_ flavor, the options can be put anywhere in the command (after or before arguments).
+> NB : As per the _getopt_ flavor, the options can be put anywhere in the command (after or before arguments).
 
 This will deploy your application normally, AND `rm -fR` all the non-linked deployment folders in `www` corresponding to the environment you're deploying.
 
