@@ -211,6 +211,9 @@ main(){
   # Check user
   ack "Current user is" $(whoami)
 
+  # Application name and type
+  ack "This application ${app}(${env}) is" "$type"
+
   indicate "Deployment path" ${DEPLOY_PATH}
   indicate "Release www path" ${WWW_PATH}
   indicate "Live www path" ${WWW_LINK}
@@ -341,23 +344,37 @@ deploy(){
   warn "Promoting environment to current release" ${env}
 
   # Should we install the vendors before deploying ?
-  if [ "$type" == "symfony2" ]; then
+  if [ "$type" == "symfony2" ] || [ "$type" == "silex" ]; then
 
     cd ${DEPLOY_PATH}
 
-    # Symfony2
+    # Symfony2 or Silex
     echo ""
-    ask "Do you wish to update vendors" "no"
+    ask "Do you wish to install [i] or update [u] vendors" "no"
     read yn
     case $yn in
-        [Yy]* ) said_yes "Updating vendors via Composer"
+        [Ii]* ) said_yes "Installing vendors via Composer"
 
                 php composer.phar self-update
                 php composer.phar install
 
                 # Cleaning the mess since it is a deploy folder
-                rm -fR ${DEPLOY_PATH}/web/bundles
-                find ${DEPLOY_PATH}/app/cache/dev -delete
+                if [ "$type" == "symfony2" ]; then
+                  rm -fR ${DEPLOY_PATH}/web/bundles
+                  find ${DEPLOY_PATH}/app/cache/dev -delete
+                fi
+
+                echo "" ;;
+        [Uu]* ) said_yes "Updating vendors via Composer"
+
+                php composer.phar self-update
+                php composer.phar update
+
+                # Cleaning the mess since it is a deploy folder
+                if [ "$type" == "symfony2" ]; then
+                  rm -fR ${DEPLOY_PATH}/web/bundles
+                  find ${DEPLOY_PATH}/app/cache/dev -delete
+                fi
 
                 echo "" ;;
          * ) said_no ;;
@@ -473,7 +490,7 @@ update_changelog(){
     BASE_CHANGELOG_PATH=${WWW_PATH}
   fi
   
-  if [ "$type" == "symfony2" ]; then
+  if [ "$type" == "symfony2" ] || [ "$type" == "silex" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
   elif [ "$type" == "standalone" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
