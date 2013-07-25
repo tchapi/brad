@@ -384,8 +384,12 @@ deploy(){
 
   # Copy all files to the destination folder
   mkdir ${WWW_PATH}
-  rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
-  
+  if [ -f "${DEPLOY_PATH}/exclude.rsync" ]; then
+    rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
+  else
+    rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/.
+  fi
+    
   # Symfony 2 Stuff
   if [ "$type" == "symfony2" ]; then
 
