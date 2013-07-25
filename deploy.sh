@@ -223,7 +223,7 @@ main(){
   echo ""
   cd ${DEPLOY_PATH}
 
-  if [ "$type" == "standalone" ] && ! [ "$ROLLBACK" = 1] ; then build_js; fi
+  if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1] ; then build_js; fi
 
   if [ $# -ge 3 ]; then 
     git_pull
@@ -344,7 +344,7 @@ deploy(){
   warn "Promoting environment to current release" ${env}
 
   # Should we install the vendors before deploying ?
-  if [ "$type" == "symfony2" ] || [ "$type" == "silex" ]; then
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
 
     cd ${DEPLOY_PATH}
 
@@ -389,7 +389,7 @@ deploy(){
   else
     rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/.
   fi
-    
+
   # Symfony 2 Stuff
   if [ "$type" == "symfony2" ]; then
 
@@ -402,7 +402,7 @@ deploy(){
     echo ${UPDATES}
     echo ""
     
-    if ! [ "$UPDATES" == "Nothing to update - your database is already in sync with the current entity metadata." ]; then
+    if ! [ "$UPDATES" = "Nothing to update - your database is already in sync with the current entity metadata." ]; then
 
       ask "Do you wish to update the schema" "no"
       read yn
@@ -494,9 +494,9 @@ update_changelog(){
     BASE_CHANGELOG_PATH=${WWW_PATH}
   fi
   
-  if [ "$type" == "symfony2" ] || [ "$type" == "silex" ]; then
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
-  elif [ "$type" == "standalone" ]; then
+  elif [ "$type" = "standalone" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
   fi
 
