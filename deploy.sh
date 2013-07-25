@@ -206,13 +206,13 @@ main(){
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
-  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n "s|rel\-beta\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
+  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n "s|rel\-[a-zA-Z]*\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
   
   # Check user
   ack "Current user is" $(whoami)
 
   # Application name and type
-  ack "This application ${app}(${env}) is" "$type"
+  ack "This application ${app} (${env}) is" "$type"
 
   indicate "Deployment path" ${DEPLOY_PATH}
   indicate "Release www path" ${WWW_PATH}
