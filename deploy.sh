@@ -494,7 +494,7 @@ update_changelog(){
     BASE_CHANGELOG_PATH=${WWW_PATH}
   fi
   
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
   elif [ "$type" = "standalone" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
