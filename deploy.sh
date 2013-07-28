@@ -223,7 +223,7 @@ main(){
   echo ""
   cd ${DEPLOY_PATH}
 
-  if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1] ; then build_js; fi
+  if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
 
   if [ $# -ge 3 ]; then 
     git_pull
