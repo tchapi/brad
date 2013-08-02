@@ -206,7 +206,7 @@ main(){
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
-  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n "s|rel\-[a-zA-Z]*\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
+  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n "s|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
   
   # Check user
   ack "Current user is" $(whoami)
