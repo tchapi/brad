@@ -485,7 +485,7 @@ install_crontabs(){
                 crontab -l | sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" | crontab -
 
                 # Install new crontab
-                (crontab -l ; echo $'\n'"${NEW_CRON}")| crontab -
+                (crontab -l ; echo "${NEW_CRON}")| crontab -
 
                 # Outputs to check
                 crontab -l
