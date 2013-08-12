@@ -473,13 +473,19 @@ install_crontabs(){
 
                 CRONTABS="`cat "${DEPLOY_PATH}/crontabs"`"
 
-                NEW_CRON=${AUTOMATED_KEYWORD_START}"\n"${CRONTABS}"\n"${AUTOMATED_KEYWORD_END}
+                NEW_CRON=${AUTOMATED_KEYWORD_START//\\}$'\n'${CRONTABS}$'\n'${AUTOMATED_KEYWORD_END//\\}
 
+                # Replace the [CONSOLE]
+                if [ "$type" == "symfony2" ]; then
+                  CONSOLE_PATH=${WWW_LINK}"/app/console"
+                  NEW_CRON=${NEW_CRON//\[CONSOLE\]/$CONSOLE_PATH}
+                fi
+             
                 # Remove automated tasks
-                crontab -l | sed '/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d' | crontab -
+                crontab -l | sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" | crontab -
 
                 # Install new crontab
-                (crontab -l ; echo "\n"${NEW_CRON})| crontab -
+                (crontab -l ; echo $'\n'"${NEW_CRON}")| crontab -
 
                 echo "" ;;
          * ) said_no ;;
