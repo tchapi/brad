@@ -487,6 +487,9 @@ install_crontabs(){
                 # Install new crontab
                 (crontab -l ; echo $'\n'"${NEW_CRON}")| crontab -
 
+                # Outputs to check
+                crontab -l
+
                 echo "" ;;
          * ) said_no ;;
     esac
