@@ -242,6 +242,7 @@ main(){
     fi
   fi
 
+  install_crontabs
   update_changelog
   restart_apache
 
@@ -455,6 +456,36 @@ link_scalpel(){
               echo "" ;;
        * ) said_no ;;
   esac
+
+}
+
+install_crontabs(){
+
+  if [ -f "${DEPLOY_PATH}/crontabs" ]; then
+
+    ask "Do you want to reinstall cron jobs" "no"
+    read yn
+    case $yn in
+        [Yy]* ) said_yes "Installing crontabs"
+
+                AUTOMATED_KEYWORD_START="\#\[AUTOMATED\:START\:${app}\:${env}\]"
+                AUTOMATED_KEYWORD_END="\#\[AUTOMATED\:END\:${app}\:${env}\]"
+
+                CRONTABS="`cat "${DEPLOY_PATH}/crontabs"`"
+
+                NEW_CRON=${AUTOMATED_KEYWORD_START}"\n"${CRONTABS}"\n"${AUTOMATED_KEYWORD_END}
+
+                # Remove automated tasks
+                crontab -l | sed '/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d' | crontab -
+
+                # Install new crontab
+                (crontab -l ; echo "\n"${NEW_CRON})| crontab -
+
+                echo "" ;;
+         * ) said_no ;;
+    esac
+
+  fi
 
 }
 
