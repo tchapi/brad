@@ -223,10 +223,9 @@ main(){
   echo ""
   cd ${DEPLOY_PATH}
 
-  if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
-
   if [ $# -ge 3 ]; then 
     git_pull
+    if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
     scalpel
     link_scalpel
   else
@@ -234,6 +233,7 @@ main(){
       revert
     else
       git_pull
+      if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
       deploy
       link_full
       if [ "$CLEANUP" = 1 ]; then
