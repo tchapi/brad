@@ -480,6 +480,13 @@ install_crontabs(){
                   CONSOLE_PATH=${WWW_LINK}"/app/console"
                   NEW_CRON=${NEW_CRON//\[CONSOLE\]/$CONSOLE_PATH}
                 fi
+
+                # Replace the [ENV]
+                if [ "$type" == "symfony2" ] && [ "$env" == "prod" ]; then
+                  NEW_CRON=${NEW_CRON//\[ENV\]/prod}
+                else
+                  NEW_CRON=${NEW_CRON//\[ENV\]/dev}
+                fi
              
                 # Remove automated tasks
                 crontab -l | sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" | crontab -
