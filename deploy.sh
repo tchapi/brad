@@ -9,6 +9,18 @@ source bootshtrap/autoload.sh # Autoloads the whole stuff
 unset projects
 declare -A projects
 
+# Globals
+DEPLOY_DIRECTORY='deploy'
+WWW_DIRECTORY='www'
+
+# Live branch and directory
+LIVE_BRANCH='live'
+LIVE_DIRECTORY='prod'
+
+# Staging branch and directory
+STAGING_BRANCH='staging'
+STAGING_DIRECTORY='beta'
+
 # Main entry point
 main(){
 
@@ -18,13 +30,13 @@ main(){
 
   date_today=`date '+%Y-%m-%d'`
   timestamp=`date '+%s'`
-  DEPLOY_PATH=${APP_BASE_PATH}'/deploy/'${app}'/'${env}
-  WWW_PATH=${APP_BASE_PATH}'/www/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
-  WWW_LINK=${APP_BASE_PATH}'/www/'${app}'/'${env}
+  DEPLOY_PATH=${APP_BASE_PATH}'/'${DEPLOY_DIRECTORY}'/'${app}'/'${env}
+  WWW_PATH=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
+  WWW_LINK=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/'${env}
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
-  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/www/${app} | sed -n "s|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
+  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/${WWW_DIRECTORY}/${app} | sed -n "s|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
   
   # Check user
   ack "Current user is" $(whoami)
@@ -41,23 +53,43 @@ main(){
   clear
   cd ${DEPLOY_PATH}
 
-  if [ $# -ge 3 ]; then 
-    git_pull
-    if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
-    scalpel
-    link_scalpel
+  # Init or Deploy ?
+  if [ "$INIT" = 1 ]; then
+    # ---- INIT ----
+
+    # Check if git url is valid :
+    git ls-remote "$GIT_URL" &>- # Problem: creates a "./-" file ????
+    if [ "$?" -ne 0 ]; then
+      notify_error "$url is not a valid GIT repository url"
+      error_exit
+    fi
+
+    init_repo
+
+    # ---- END : INIT ----
   else
-    if [ "$ROLLBACK" = 1 ]; then
-      revert
-    else
+    # ---- DEPLOY ----
+
+    if [ $# -ge 3 ]; then 
       git_pull
       if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
-      deploy
-      link_full
-      if [ "$CLEANUP" = 1 ]; then
-        cleanup
+      scalpel
+      link_scalpel
+    else
+      if [ "$ROLLBACK" = 1 ]; then
+        revert
+      else
+        git_pull
+        if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
+        deploy
+        link_full
+        if [ "$CLEANUP" = 1 ]; then
+          cleanup
+        fi
       fi
     fi
+
+    # ---- END : DEPLOY ----
   fi
 
   install_crontabs
@@ -74,7 +106,7 @@ check_arguments(){
   if [ $# -ge 3 ] && [ "$ROLLBACK" = 1 ]; then
     notify_error "Cannot rollback single files"
     usage
-    exit 1
+    error_exit
   fi
   
   app=$1
@@ -91,16 +123,16 @@ check_arguments(){
   # Naaaaay
   if ! $project_found; then
     notify_error "Bad application name ($app)"
-    exit 1
+    error_exit
   fi
 
   env=$2
   # Checking environment is good
   case $env in
-    "prod") env="prod";;
-    "beta") env="beta";;
+    "prod") env="$LIVE_DIRECTORY";;
+    "beta") env="$STAGING_DIRECTORY";;
     *) notify_error "Bad environment ($env)"
-       exit 1;;
+       error_exit;;
   esac
 
 }
@@ -109,8 +141,142 @@ check_arguments(){
 set_cleanup_flag(){ 
   CLEANUP=1
 }
+set_init_flag(){ 
+  INIT=1
+  GIT_URL="$1"
+}
 set_rollback_flag(){ 
   ROLLBACK=1
+}
+
+init_repo(){
+
+  DIR_PATH=`readlink -f "${app}"` # Get rid of symlinks and get abs path
+  if [[ -d "${DIR_PATH}" ]] ; then # now we're testing
+    notify_error "This application already has a deployment folder ($app)"
+    error_exit
+  fi
+
+  # We create a dir for the app if it doesn't already exist
+  mkdir $app
+
+  # Check the existence of branches
+  HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
+  HAS_LIVE=`git ls-remote $GIT_URL | grep ${LIVE_BRANCH} | wc -l`
+
+  if [ "$HAS_LIVE" -lt 1 ]; then
+    notify_error "no ${LIVE_BRANCH} branch"
+    error_exit
+  fi
+
+  if [ "$HAS_STAGING" -lt 1 ]; then
+    warn "no ${STAGING_BRANCH} branch"
+  fi
+
+  # Installing STAGING deployed environment
+  if [ "$HAS_STAGING" -gt 0 ]; then
+
+    cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
+    mkdir ${STAGING_DIRECTORY}
+
+    cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}
+    git init
+    git remote add -t ${STAGING_BRANCH} -f origin $GIT_URL
+
+    git checkout ${STAGING_BRANCH}
+
+    if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+
+      curl -S http://getcomposer.org/installer | php
+      php composer.phar self-update
+      php composer.phar install --prefer-dist
+
+      # web/uploads for apache uploads
+      if [ "$type" = "symfony2" ]; then
+        cd web
+        ln -s ../../uploads uploads
+        chmod 775 uploads
+
+        # var/sessions for sessions storage
+        cd app
+        ln -s ../../var/beta var
+        chmod 775 var
+        cd var
+        mkdir sessions
+        chmod 775 sessions
+      fi
+
+    fi
+
+  fi
+
+  # Installing PROD deployed environment
+
+  cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
+  mkdir ${LIVE_DIRECTORY}
+
+  cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}
+  git init
+  git remote add -t ${LIVE_BRANCH} -f origin $GIT_URL
+  git checkout ${LIVE_BRANCH}
+
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+
+    curl -S http://getcomposer.org/installer | php
+    php composer.phar self-update
+    php composer.phar install --prefer-dist
+
+    if [ "$type" = "symfony2" ]; then
+      cd web
+      ln -s ../../uploads uploads
+      chmod 775 uploads
+
+      # var/sessions for sessions storage
+      cd app
+      ln -s ../../var/prod var
+      chmod 775 var
+      cd var
+      mkdir sessions
+      chmod 775 sessions
+    fi
+
+  fi
+
+  # Creating Web folders
+  cd ${APP_BASE_PATH}/${WWW_DIRECTORY}/
+  mkdir $app
+
+  # Rights
+  if [ "$type" = "symfony2" ]; then
+    
+    cd ${APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
+    
+    mkdir uploads
+    chmod 775 uploads
+
+    mkdir var
+    chmod 775 var
+
+  fi
+
+  # Summary
+
+  ack "Created environnements :"
+  indicate "Remote repository" ${GIT_URL}
+
+  indicate "Staging Deploy path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}
+  indicate " --> tracking branch" ${STAGING_BRANCH}
+
+  indicate "Live Deploy path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}
+  indicate " --> tracking branch " ${LIVE_BRANCH}
+
+  indicate "Web path" ${APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
+  clear
+
+  # Done
+  notify_done
+  exit 0
+
 }
 
 # Fetches and merge the changes found on the remote branch of the given folder
@@ -118,15 +284,15 @@ git_pull(){
 
   # Git all the way
   ack "Checking out remote branch from origin"
-  echo ""
+  clear
   echo "   | "`git reset --hard HEAD`
   echo "   | "`git pull origin`
   echo "   | "`git status`
-  echo ""
+  clear
 
   revision=`git log -n 1 --pretty="format:%h %ci"`
   indicate "Repository updated to revision" ${revision}
-  echo ""
+  clear
 
   revision_safe=`git log -n 1 --pretty="format:%h"`
   WWW_PATH=${WWW_PATH}"-"${revision_safe}
@@ -197,7 +363,7 @@ deploy(){
                 php composer.phar install
 
                 # Cleaning the mess since it is a deploy folder
-                if [ "$type" == "symfony2" ]; then
+                if [ "$type" = "symfony2" ]; then
                   rm -fR ${DEPLOY_PATH}/web/bundles
                   find ${DEPLOY_PATH}/app/cache/dev -delete
                 fi
@@ -209,7 +375,7 @@ deploy(){
                 php composer.phar update
 
                 # Cleaning the mess since it is a deploy folder
-                if [ "$type" == "symfony2" ]; then
+                if [ "$type" = "symfony2" ]; then
                   rm -fR ${DEPLOY_PATH}/web/bundles
                   find ${DEPLOY_PATH}/app/cache/dev -delete
                 fi
@@ -229,7 +395,7 @@ deploy(){
   fi
 
   # Symfony 2 Stuff
-  if [ "$type" == "symfony2" ]; then
+  if [ "$type" = "symfony2" ]; then
 
     cd ${WWW_PATH}
 
@@ -269,8 +435,8 @@ deploy(){
 # Revert to a previous deployment folder
 revert(){
 
-  LAST_PATH=`ls $APP_BASE_PATH/www/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
-  LAST_PATH=${APP_BASE_PATH}'/www/'${app}/${LAST_PATH}
+  LAST_PATH=`ls $APP_BASE_PATH/${WWW_DIRECTORY}/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
+  LAST_PATH=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/${LAST_PATH}
   
   if ! [ "$LAST_PATH" = "" ]; then
 
@@ -385,13 +551,13 @@ install_crontabs(){
                 NEW_CRON=${AUTOMATED_KEYWORD_START//\\}$'\n'${CRONTABS}$'\n'${AUTOMATED_KEYWORD_END//\\}
 
                 # Replace the [CONSOLE]
-                if [ "$type" == "symfony2" ]; then
+                if [ "$type" = "symfony2" ]; then
                   CONSOLE_PATH=${WWW_LINK}"/app/console"
                   NEW_CRON=${NEW_CRON//\[CONSOLE\]/$CONSOLE_PATH}
                 fi
 
                 # Replace the [ENV]
-                if [ "$type" == "symfony2" ] && [ "$env" == "prod" ]; then
+                if [ "$type" = "symfony2" ] && [ "$env" = "prod" ]; then
                   NEW_CRON=${NEW_CRON//\[ENV\]/prod}
                 else
                   NEW_CRON=${NEW_CRON//\[ENV\]/dev}
@@ -427,7 +593,7 @@ cleanup(){
       [Yy]* ) said_yes "Cleaning up"
               for f in $PREVIOUS_PATHS
               do
-                PATH_TO_DELETE=${APP_BASE_PATH}'/www/'${app}/$f
+                PATH_TO_DELETE=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/$f
                 if ! [ $PATH_TO_DELETE = $WWW_PATH ]; then
                   rm -fR $PATH_TO_DELETE
                   warn "Removed" $PATH_TO_DELETE

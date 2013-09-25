@@ -80,6 +80,9 @@ then
 
   php composer.phar self-update
   php composer.phar install --prefer-dist
+  # php app/console doctrine:schema:update --force
+  # php app/console doctrine:fixtures:load
+  # chmod -R 777 app/cache app/logs
 
   # web/uploads for apache uploads
   cd web
@@ -111,6 +114,9 @@ then
 
   php composer.phar self-update
   php composer.phar install --prefer-dist
+  # php app/console doctrine:schema:update --force
+  # php app/console doctrine:fixtures:load
+  # chmod -R 777 app/cache app/logs
 
   cd web
   ln -s ../../uploads uploads
