@@ -89,13 +89,14 @@ main(){
       fi
     fi
 
+    install_crontabs
+    update_changelog
+    restart_apache
+
     # ---- END : DEPLOY ----
   fi
 
-  install_crontabs
-  update_changelog
-  restart_apache
-
+  
   notify_done
 
 }
