@@ -1,9 +1,9 @@
-#!/usr/local/bin/bash
+#!/bin/bash
 # Deployement script for GitHub / Bitbucket / Any remote Git server
 
 # Use BootSHtrap
 # __DEBUG=1 # Sets the debug mode, which outputs logs to standard output
-source bootshtrap/autoload.sh # Autoloads the whole stuff
+source bootshtrap/bootshtrap/autoload.sh # Autoloads the whole stuff
 
 # Associative arrays for projects in config
 unset projects
