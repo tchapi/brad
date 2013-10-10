@@ -1,3 +1,4 @@
 [submodule "bootshtrap"]
 	path = bootshtrap
 	url = git@github.com:tchapi/bootshtrap.git
+        branch = master
