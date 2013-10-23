@@ -111,7 +111,9 @@ check_arguments(){
     error_exit
   fi
   
-  app=$1
+  # We need an app and an environment at least
+  app="${1-}"
+
   # Checking that the project exists
   project_found=false
   # What project, sir ?
@@ -128,13 +130,15 @@ check_arguments(){
     error_exit
   fi
 
-  env=$2
+  env="${2-}"
   # Checking environment is good
   case $env in
     "prod") env="$LIVE_DIRECTORY";;
     "beta") env="$STAGING_DIRECTORY";;
-    *) notify_error "Bad environment ($env)"
-       error_exit;;
+    *) if ! [ "$INIT" = 1 ]; then
+        notify_error "Bad environment ($env)"
+        error_exit
+       fi;;
   esac
 
 }
