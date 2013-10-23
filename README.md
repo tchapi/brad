@@ -28,15 +28,26 @@ APP_BASE_PATH
 
 _NB : Be sure to have no trailing slash at the end of your path_
 
-## Cloning and initing a project
+## Configurating for deployement
 
-The script `init.sh` allows you to create a new project :
+Before a project can be initialized, you have to add it in the `deploy.conf` configuration file :
 
 ```bash
-$ ./init.sh my_new_app git_repository
+projects["app_1"]="standalone"
+projects["my_symfony2_app"]="symfony2"
+```                            
+
+`standalone` references a standard project, whereas `symfony2` (or `silex`) explicitely references a project that is based on the Symfony2 (or Silex) framework. This is used when initing and deploying to accomplish tasks such as cache warmup, schema update, etc ...
+
+## Cloning and initing a project
+
+Once conf'ed, you can init a project with :
+
+```bash
+$ ./deploy.sh --init git_repository my_new_app 
 ```
 
-.. where `my_new_app` will be the name of your application directory (created ad hoc) and `git_repository` is the url of the related git repository.
+.. where `my_new_app` will be the name of your application (the directories will be created ad hoc) and `git_repository` is the url of the related git repository.
 
 The script will init the following directory structure :
 
@@ -79,17 +90,6 @@ In the case of a Symfony 2 project (_automatically detected with the existence o
   - `var/sessions` (_to store the user sessions — this allows to separate the cache from the sessions and deploy without logging out all the users if configured in the Symfony 2 application_)
 
 Links (symbolic) to these folders are created respectively in `web/` and in `app/` of your Symfony2 application.
-
-## Configurating for deployement
-
-Once a project has been initialized, you have to add it in the `deploy.conf` configuration file :
-
-```bash
-projects["app_1"]="standalone"
-projects["my_symfony2_app"]="symfony2"
-```                            
-
-`standalone` references a standard project, whereas `symfony2` explicitely references a project that is based on the Symfony2 framework. This is used when deploying to accomplish tasks such as cache warmup, schema update, etc ...
 
 ## Deploying a project
 
