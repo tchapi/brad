@@ -113,7 +113,7 @@ $ ./deploy.sh my_app environment [file1 file2 ... ]
 ```
 In this case, the previous production or staging release directory will be copied to a new release directory, and the file(s) will be replaced _in situ_ in this new directory.
 
-## Rollbacking to a previous deployement
+## Rollbacking to a previous deployment
 
 If you haven't deleted the previous deployment directories, it is possible to rollback to a previous instance of your application. This only applies to the application itself and not to the database schema or sessions / uploads, for instance.
 
