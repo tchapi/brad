@@ -6,7 +6,7 @@ Make easy atomic deployments from Github / Bitbucket, or any remote Git server
 The package consists of two scripts : `init.sh` and `deploy.sh`, and a configuration file : `deploy.conf`.
 It is based on the bootshtrap shell micro-library (see https://github.com/tchapi/bootshtrap).
 
-> NB : You will have to copy `deploy.conf.example` to `deploy.conf` for the scripts to work. You should as well make sure that `init.sh` and `deploy.sh` are executable, or run `chmod +x init.sh deploy.sh` in case
+> NB : You will have to copy `deploy.conf.example` to `deploy.conf` for the scripts to work. You should as well make sure that `deploy.sh` is executable, or run `chmod +x deploy.sh` in case
 
 ## Initial configuration
 
