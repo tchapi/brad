@@ -55,8 +55,6 @@ main(){
   indicate "Live www path" ${WWW_LINK}
 
   # Go into the deploy directory
-  warn "Changing directory to" ${DEPLOY_PATH}
-  clear
   cd ${DEPLOY_PATH}
 
   # Init or Deploy ?
@@ -101,7 +99,6 @@ main(){
 
     # ---- END : DEPLOY ----
   fi
-
   
   notify_done
 
@@ -293,6 +290,8 @@ init_repo(){
 # Fetches and merge the changes found on the remote branch of the given folder
 git_pull(){
 
+  header "Pulling changes"
+
   # Git all the way
   ack "Checking out remote branch from origin"
   clear
@@ -357,7 +356,7 @@ scalpel(){
 # Deploys to current release
 deploy(){
 
-  warn "Promoting environment to current release" ${env}
+  header "Preparing ${env} environment for release"
 
   # Should we install the vendors before deploying ?
   if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
@@ -441,7 +440,7 @@ deploy(){
   fi
 
   ack "Deployment is done !"
-  
+
 }
 
 # Revert to a previous deployment folder
@@ -474,6 +473,8 @@ revert(){
 # Link the full folder
 link_full(){
 
+  header "Promoting ${env} environment now"
+
   yn=`ask "Do you wish to promote (link)" "no"`
   case $yn in
       [Yy]* ) said_yes "Linking"
@@ -487,7 +488,9 @@ link_full(){
 # Link a single file in a copied deployment folder
 link_scalpel(){
 
-  yn=`ask "Deployment is done — Do you wish to scalpel (link)" "no"`
+  header "Promoting ${env} environment now"
+
+  yn=`ask "Do you wish to scalpel (link)" "no"`
   case $yn in
       [Yy]* ) said_yes "Linking"
               ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
