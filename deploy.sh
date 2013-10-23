@@ -4,7 +4,7 @@
 # Use BootSHtrap
 # __DEBUG=1 # Sets the debug mode, which outputs logs to standard output
 config="`dirname $0`"/bootshtrap.config
-source bootshtrap/bootshtrap/autoload.sh # Autoloads the whole stuff
+source "`dirname $0`"/bootshtrap/bootshtrap/autoload.sh # Autoloads the whole stuff
 
 # Associative arrays for projects in config
 unset projects
