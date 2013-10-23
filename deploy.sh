@@ -93,8 +93,8 @@ main(){
       fi
     fi
 
-    install_crontabs
     update_changelog
+    install_crontabs
     restart_apache
 
     # ---- END : DEPLOY ----
@@ -408,6 +408,7 @@ deploy(){
 
     cd ${WWW_PATH}
 
+    clear
     ack "Upcoming changes to the schema"
     UPDATES=`php app/console doctrine:schema:update --dump-sql`
 
@@ -439,6 +440,7 @@ deploy(){
  
   fi
 
+  clear
   ack "Deployment is done !"
 
 }
@@ -520,6 +522,7 @@ update_changelog(){
   fi
 
   indicate "Writing CHANGELOG to" ${CHANGELOG_PATH}
+  clear
 
   echo "# CHANGELOG" > ${CHANGELOG_PATH}
 
@@ -586,7 +589,7 @@ install_crontabs(){
 
                 # Outputs to check
                 crontab -l
-
+                clear
                 ;;
          * ) said_no ;;
     esac
