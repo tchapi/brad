@@ -22,12 +22,17 @@ LIVE_DIRECTORY='prod'
 STAGING_BRANCH='staging'
 STAGING_DIRECTORY='beta'
 
+# Init flags
+CLEANUP=0
+ROLLBACK=0
+INIT=0
+
 # Main entry point
 main(){
 
   load_config_file "$(dirname $0)/deploy.conf"
 
-  check_arguments
+  check_arguments "${@}"
 
   date_today=`date '+%Y-%m-%d'`
   timestamp=`date '+%s'`
@@ -119,7 +124,7 @@ check_arguments(){
   # What project, sir ?
   for project_slug in "${!projects[@]}"; do
     if [ "$app" = "$project_slug" ]; then
-      type=${command}${projects["$project_slug"]}
+      type=${projects["$project_slug"]}
       project_found=true
     fi
   done
@@ -298,7 +303,6 @@ git_pull(){
 
   revision=`git log -n 1 --pretty="format:%h %ci"`
   indicate "Repository updated to revision" ${revision}
-  clear
 
   revision_safe=`git log -n 1 --pretty="format:%h"`
   WWW_PATH=${WWW_PATH}"-"${revision_safe}
@@ -436,6 +440,8 @@ deploy(){
  
   fi
 
+  ack "Deployment is done !"
+  
 }
 
 # Revert to a previous deployment folder
@@ -468,7 +474,7 @@ revert(){
 # Link the full folder
 link_full(){
 
-  yn=`ask "Deployment is done — Do you wish to promote (link)" "no"`
+  yn=`ask "Do you wish to promote (link)" "no"`
   case $yn in
       [Yy]* ) said_yes "Linking"
               ln -sfvn ${WWW_PATH} ${WWW_LINK}
