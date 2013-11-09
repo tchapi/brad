@@ -88,6 +88,7 @@ main(){
     if [ $# -ge 3 ]; then
 
       git_pull
+      update_changelog 
 
       if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
 
@@ -103,6 +104,7 @@ main(){
       else
 
         git_pull
+        update_changelog 
 
         if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
   
@@ -121,7 +123,6 @@ main(){
 
     fi
 
-    update_changelog 
     install_crontabs # remote
     restart_apache # remote
 
@@ -350,6 +351,55 @@ git_pull(){
 
 }
 
+# Update Changelog
+update_changelog(){
+
+  # Update CHANGELOG.txt
+  CHANGELOG_NAME='CHANGELOG.txt'
+
+  if [ "$ROLLBACK" = 1 ]; then
+    BASE_CHANGELOG_PATH=${LAST_PATH}
+  else
+    BASE_CHANGELOG_PATH=${WWW_PATH}
+  fi
+  
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
+  elif [ "$type" = "standalone" ]; then
+    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
+  fi
+
+  indicate "Writing CHANGELOG to" ${CHANGELOG_PATH}
+  clear
+
+  echo "# CHANGELOG" > ${CHANGELOG_PATH}
+
+  if [ "$ROLLBACK" = 1 ]; then
+
+    NOW=$(date +"%c")
+    echo "# Last update : ${NOW}" >> ${CHANGELOG_PATH}
+    echo "# ! Site is now in ROLLBACKED state !" >> ${CHANGELOG_PATH}
+    echo "" >> ${CHANGELOG_PATH}
+
+  else 
+
+    cd ${DEPLOY_PATH}
+
+    current_date=`git log -1 --format="%ad"`
+    echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
+    echo "" >> ${CHANGELOG_PATH}
+
+    change_log=`git log --no-merges --date-order --date=rfc | \
+      sed -e '/^commit.*$/d' | \
+      awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
+      sed -e 's/^Author: //g' | \
+      sed -e 's/>Date:   \(.*\)/>\t\1/g' | \
+      sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' >> ${CHANGELOG_PATH}`
+
+  fi
+
+}
+
 # Builds minified JS if needed (if exists /minify.php)
 build_js(){
 
@@ -557,55 +607,6 @@ link_scalpel(){
 }
 
 
-# Update Changelog
-update_changelog(){
-
-  # Update CHANGELOG.txt
-  CHANGELOG_NAME='CHANGELOG.txt'
-
-  if [ "$ROLLBACK" = 1 ]; then
-    BASE_CHANGELOG_PATH=${LAST_PATH}
-  else
-    BASE_CHANGELOG_PATH=${WWW_PATH}
-  fi
-  
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
-    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
-  elif [ "$type" = "standalone" ]; then
-    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
-  fi
-
-  indicate "Writing CHANGELOG to" ${CHANGELOG_PATH}
-  clear
-
-  echo "# CHANGELOG" > ${CHANGELOG_PATH}
-
-  if [ "$ROLLBACK" = 1 ]; then
-
-    NOW=$(date +"%c")
-    echo "# Last update : ${NOW}" >> ${CHANGELOG_PATH}
-    echo "# ! Site is now in ROLLBACKED state !" >> ${CHANGELOG_PATH}
-    echo "" >> ${CHANGELOG_PATH}
-
-  else 
-
-    cd ${DEPLOY_PATH}
-
-    current_date=`git log -1 --format="%ad"`
-    echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
-    echo "" >> ${CHANGELOG_PATH}
-
-    change_log=`git log --no-merges --date-order --date=rfc | \
-      sed -e '/^commit.*$/d' | \
-      awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
-      sed -e 's/^Author: //g' | \
-      sed -e 's/>Date:   \(.*\)/>\t\1/g' | \
-      sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' >> ${CHANGELOG_PATH}`
-
-  fi
-
-}
-
 # Install crontabs if necessary
 install_crontabs(){
 
@@ -618,7 +619,7 @@ install_crontabs(){
                 AUTOMATED_KEYWORD_START="\#\[AUTOMATED\:START\:${app}\:${env}\]"
                 AUTOMATED_KEYWORD_END="\#\[AUTOMATED\:END\:${app}\:${env}\]"
 
-                CRONTABS="`cat "${DEPLOY_PATH}/crontabs"`"
+                CRONTABS="`$ON_TARGET_DO cat "${DEPLOY_PATH}/crontabs"`"
 
                 NEW_CRON=${AUTOMATED_KEYWORD_START//\\}$'\n'${CRONTABS}$'\n'${AUTOMATED_KEYWORD_END//\\}
 
@@ -636,13 +637,13 @@ install_crontabs(){
                 fi
              
                 # Remove automated tasks
-                crontab -l | sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" | crontab -
+                $ON_TARGET_DO crontab -l | sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" | crontab -
 
                 # Install new crontab
-                (crontab -l ; echo "${NEW_CRON}")| crontab -
+                $ON_TARGET_DO (crontab -l ; echo "${NEW_CRON}")| crontab -
 
                 # Outputs to check
-                crontab -l
+                $ON_TARGET_DO crontab -l
                 clear
                 ;;
          * ) said_no ;;
@@ -665,9 +666,9 @@ cleanup(){
       [Yy]* ) said_yes "Cleaning up"
               for f in $PREVIOUS_PATHS
               do
-                PATH_TO_DELETE=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/$f
-                if ! [ $PATH_TO_DELETE = $WWW_PATH ]; then
-                  rm -fR $PATH_TO_DELETE
+                PATH_TO_DELETE=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/$f
+                if ! [ $PATH_TO_DELETE = $REMOTE_WWW_PATH ]; then
+                  $ON_TARGET_DO rm -fR $PATH_TO_DELETE
                   warn "Removed" $PATH_TO_DELETE
                 fi
               done
@@ -685,7 +686,7 @@ restart_apache(){
   res=`ask "Do you wish to restart Apache 2" "no"`
   case $res in
       [Yy]* ) said_yes "Restarting Apache"
-              sudo /root/apachereload.sh
+              $ON_TARGET_DO sudo /root/apachereload.sh
               ;;
       * ) said_no ;;
   esac
