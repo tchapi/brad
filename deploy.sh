@@ -60,7 +60,7 @@ main(){
     indicate "Release www path" ${WWW_PATH}
     indicate "Remote www path" ${REMOTE_WWW_PATH}
   fi
-  indicate "Live www path" ${WWW_LINK}
+  indicate "Live www path" ${host}${WWW_LINK}
 
   # Init or Deploy ?
   if [ "$INIT" = 1 ]; then
@@ -147,6 +147,8 @@ check_arguments(){
     error_exit
   fi
 
+  indicate "Deploying" ${app}
+
   env="${2-}"
   # Checking environment is good
   case $env in
@@ -160,11 +162,13 @@ check_arguments(){
 
   if [ ! "${host-}" = "" ]; then
     indicate "Deployment target" ${host}
-    remote="ssh -t -t -t ${user}@${host} -p ${port}"
+    remote="ssh -t -t -t ${user}@${host} -p ${port} bash -c \"' "
+    remote_end="\"'"
     REMOTE_APP_BASE_PATH=${path}
   else
     indicate "Deployment target" "localhost"
     remote=""
+    remote_end=""
     REMOTE_APP_BASE_PATH=${APP_BASE_PATH}
   fi
 
@@ -231,7 +235,7 @@ init_repo(){
         # chmod 775 uploads
 
         # var/sessions for sessions storage
-        cd app
+        cd ../app
         ln -s ../../var/beta var
         # chmod 775 var
         cd var
@@ -262,30 +266,39 @@ init_repo(){
     if [ "$type" = "symfony2" ]; then
       cd web
       ln -s ../../uploads uploads
-      chmod 775 uploads
+      # chmod 775 uploads
 
       # var/sessions for sessions storage
       cd app
       ln -s ../../var/prod var
-      chmod 775 var
+      # chmod 775 var
       cd var
       mkdir sessions
-      chmod 775 sessions
+      # chmod 775 sessions
     fi
 
   fi
 
   # Creating Web folders 
-  $remote mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
+  $remote 
+    if [[ ! -d ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app} ]]; then
+      mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
+    fi
+  $remote_end
 
   # Rights
   if [ "$type" = "symfony2" ]; then
     
-    $remote mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
-    $remote chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
-
-    $remote mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
-    $remote chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/var
+    $remote
+      if [[ ! -d ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads ]]; then
+        mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+        chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+      fi
+      if [[ ! -d ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var ]]; then
+        mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
+        chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
+      fi
+    $remote_end
 
   fi
 
@@ -300,7 +313,7 @@ init_repo(){
   indicate "Live Deploy path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}
   indicate " --> tracking branch " ${LIVE_BRANCH}
 
-  indicate "Web path" ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
+  indicate "Web path" ${host}${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
   clear
 
   # Done
