@@ -47,6 +47,9 @@ main(){
 
   if [ ! "$INIT" = 1 ]; then
     PREVIOUS_PATHS=`$ON_TARGET_DO ls ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app} | sed -n "s|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
+
+    LAST_PATH=`$ON_TARGET_DO ls ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
+    LAST_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/${LAST_PATH}
   fi
 
   # Check user
@@ -255,11 +258,11 @@ init_repo(){
 
       # web/uploads for apache uploads
       if [ "$type" = "symfony2" ]; then
-        cd web
+        cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/web
         ln -s ../../uploads uploads
 
         # var/sessions for sessions storage
-        cd ../app
+        cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/app
         ln -s ../../var/${STAGING_DIRECTORY} var
 
       fi
@@ -293,11 +296,11 @@ init_repo(){
     php composer.phar install --prefer-dist
 
     if [ "$type" = "symfony2" ]; then
-      cd web
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/web
       ln -s ../../uploads uploads
 
       # var/sessions for sessions storage
-      cd app
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/app
       ln -s ../../var/prod var
 
     fi
@@ -334,6 +337,8 @@ init_repo(){
 
 # Fetches and merge the changes found on the remote branch of the given folder
 git_pull(){
+
+  cd ${DEPLOY_PATH}
 
   header "Pulling changes"
 
@@ -552,10 +557,7 @@ upgrade_db() {
 # Revert to a previous deployment folder
 revert(){
 
-  LAST_PATH=`$ON_TARGET_DO ls ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
-  LAST_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/${LAST_PATH}
-  
-  if ! [ "$LAST_PATH" = "" ]; then
+    if ! [ "$LAST_PATH" = "" ]; then
 
     indicate "Rollback path" ${LAST_PATH}
 
