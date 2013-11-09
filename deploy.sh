@@ -56,9 +56,6 @@ main(){
   indicate "Remote www path" ${REMOTE_WWW_PATH}
   indicate "Live www path" ${WWW_LINK}
 
-  # Go into the deploy directory
-  cd ${DEPLOY_PATH}
-
   # Init or Deploy ?
   if [ "$INIT" = 1 ]; then
     # ---- INIT ----
@@ -75,6 +72,9 @@ main(){
     # ---- END : INIT ----
   else
     # ---- DEPLOY ----
+
+    # Go into the deploy directory
+    cd ${DEPLOY_PATH}
 
     if [ $# -ge 3 ]; then 
       git_pull
@@ -175,7 +175,7 @@ set_rollback_flag(){
 
 init_repo(){
 
-  DIR_PATH=`readlink -f "${app}"` # Get rid of symlinks and get abs path
+  DIR_PATH=`readlink -f "${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}"` # Get rid of symlinks and get abs path
   if [[ -d "${DIR_PATH}" ]] ; then # now we're testing
     notify_error "This application already has a deployment folder ($app)"
     error_exit
