@@ -228,6 +228,13 @@ init_repo(){
     warn "no ${STAGING_BRANCH} branch"
   fi
 
+  if [ "$type" = "symfony2" ]; then
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var  
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+  fi
+
   # Installing STAGING deployed environment
   if [ "$HAS_STAGING" -gt 0 ]; then
 
@@ -250,16 +257,20 @@ init_repo(){
       if [ "$type" = "symfony2" ]; then
         cd web
         ln -s ../../uploads uploads
-        # chmod 775 uploads
 
         # var/sessions for sessions storage
         cd ../app
-        ln -s ../../var/beta var
-        # chmod 775 var
-        cd var
-        mkdir sessions
-        # chmod 775 sessions
+        ln -s ../../var/${STAGING_DIRECTORY} var
+
       fi
+
+    fi
+
+    # Rights
+    if [ "$type" = "symfony2" ]; then
+     
+      $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var/${STAGING_DIRECTORY}/sessions
+      $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var/${STAGING_DIRECTORY}/sessions
 
     fi
 
@@ -284,29 +295,20 @@ init_repo(){
     if [ "$type" = "symfony2" ]; then
       cd web
       ln -s ../../uploads uploads
-      # chmod 775 uploads
 
       # var/sessions for sessions storage
       cd app
       ln -s ../../var/prod var
-      # chmod 775 var
-      cd var
-      mkdir sessions
-      # chmod 775 sessions
+
     fi
 
   fi
 
-  # Creating Web folders 
-  $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
-
   # Rights
   if [ "$type" = "symfony2" ]; then
     
-    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
-    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
-    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
-    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var/${LIVE_DIRECTORY}/sessions
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var/${LIVE_DIRECTORY}/sessions
 
   fi
 
