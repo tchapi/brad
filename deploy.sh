@@ -278,21 +278,15 @@ init_repo(){
   fi
 
   # Creating Web folders 
-  $remote if [[ ! -d ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app} ]]; then mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app} fi
+  $remote mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
 
   # Rights
   if [ "$type" = "symfony2" ]; then
     
-    $remote
-      if [[ ! -d ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads ]]; then
-        mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
-        chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
-      fi
-      if [[ ! -d ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var ]]; then
-        mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
-        chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
-      fi
-    $remote_end
+    $remote mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+    $remote chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+    $remote mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
+    $remote chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
 
   fi
 
