@@ -46,7 +46,7 @@ main(){
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
   if [ ! "$INIT" = 1 ]; then
-    PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/${WWW_DIRECTORY}/${app} | sed -n "s|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
+    PREVIOUS_PATHS=`$ON_TARGET_DO ls ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app} | sed -n "s|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
   fi
 
   # Check user
@@ -60,11 +60,14 @@ main(){
     indicate "Release www path" ${WWW_PATH}
     indicate "Remote www path" ${REMOTE_WWW_PATH}
   fi
-  indicate "Live www path" ${host}${WWW_LINK}
+  indicate "Deployment target" ${remote}
+  indicate "Live www path" ${WWW_LINK}
 
   # Init or Deploy ?
   if [ "$INIT" = 1 ]; then
     # ---- INIT ----
+
+    header "Initializing deployment structure"
 
     # Check if git url is valid :
     git ls-remote "$GIT_URL" &>- # Problem: creates a "./-" file ????
@@ -82,24 +85,40 @@ main(){
     # Go into the deploy directory
     cd ${DEPLOY_PATH}
 
-    if [ $# -ge 3 ]; then 
+    if [ $# -ge 3 ]; then
+
       git_pull
+
       if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
+
       scalpel
+
+      header "Promoting ${env} environment now"
       link_scalpel
+
     else
+
       if [ "$ROLLBACK" = 1 ]; then
         revert
       else
+
         git_pull
+
         if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
+  
+        header "Preparing ${env} environment for release"
         deploy
+
+        header "Promoting ${env} environment now"
         upgrade_db
         link_full
+
         if [ "$CLEANUP" = 1 ]; then
           cleanup
         fi
+
       fi
+
     fi
 
     update_changelog 
@@ -161,12 +180,12 @@ check_arguments(){
   esac
 
   if [ ! "${host-}" = "" ]; then
-    indicate "Deployment target" ${host}
-    remote="ssh -t -t -t ${user}@${host} -p ${port}"
+    ON_TARGET_DO="ssh -t -t -t ${user}@${host} -p ${port}"
+    remote="${user}@${host}:${port}"
     REMOTE_APP_BASE_PATH=${path}
   else
-    indicate "Deployment target" "localhost"
-    remote=""
+    remote="`whoami`@localhost"
+    ON_TARGET_DO=""
     REMOTE_APP_BASE_PATH=${APP_BASE_PATH}
   fi
 
@@ -278,15 +297,15 @@ init_repo(){
   fi
 
   # Creating Web folders 
-  $remote mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
+  $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
 
   # Rights
   if [ "$type" = "symfony2" ]; then
     
-    $remote mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
-    $remote chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
-    $remote mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
-    $remote chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
 
   fi
 
@@ -324,7 +343,7 @@ git_pull(){
   clear
 
   revision=`git log -n 1 --pretty="format:%h %ci"`
-  indicate "Repository updated to revision" ${revision}
+  indicate "Deployment folder updated to revision" ${revision}
 
   revision_safe=`git log -n 1 --pretty="format:%h"`
   WWW_PATH=${WWW_PATH}"-"${revision_safe}
@@ -378,8 +397,6 @@ scalpel(){
 
 # Deploys to current release
 deploy(){
-
-  header "Preparing ${env} environment for release"
 
   # Should we install the vendors before deploying ?
   if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
@@ -456,7 +473,7 @@ upgrade_db() {
 
     clear
     ack "Upcoming changes to the schema"
-    UPDATES=`$remote php ${REMOTE_WWW_PATH}/app/console doctrine:schema:update --dump-sql`
+    UPDATES=`$ON_TARGET_DO php ${REMOTE_WWW_PATH}/app/console doctrine:schema:update --dump-sql`
 
     clear
     echo ${UPDATES}
@@ -467,7 +484,7 @@ upgrade_db() {
       yn=`ask "Do you wish to update the schema" "no"`
       case $yn in
           [Yy]* ) said_yes "Updating schema"
-                  $remote php ${REMOTE_WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  $ON_TARGET_DO php ${REMOTE_WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
                   ;;
           * ) said_no ;;
       esac
@@ -483,8 +500,8 @@ upgrade_db() {
 # Revert to a previous deployment folder
 revert(){
 
-  LAST_PATH=`ls $APP_BASE_PATH/${WWW_DIRECTORY}/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
-  LAST_PATH=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/${LAST_PATH}
+  LAST_PATH=`$ON_TARGET_DO ls ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/$app | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
+  LAST_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/${LAST_PATH}
   
   if ! [ "$LAST_PATH" = "" ]; then
 
@@ -493,7 +510,7 @@ revert(){
     yn=`ask "Are you sure you want to rollback (link)" "no"`
     case $yn in
         [Yy]* ) said_yes "Rollbacking"
-                ln -sfvn ${LAST_PATH} ${WWW_LINK}
+                $ON_TARGET_DO ln -sfvn ${LAST_PATH} ${WWW_LINK}
                 notify_done ;;
          * ) said_no ;;
     esac
@@ -510,8 +527,6 @@ revert(){
 # Link the full folder
 link_full(){
 
-  header "Promoting ${env} environment now"
-
   yn=`ask "Do you wish to promote (link)" "no"`
   case $yn in
       [Yy]* ) said_yes "Linking"
@@ -520,7 +535,7 @@ link_full(){
               # Remote
               if [ ! "$remote" = "" ]; then
                 rsync -av --del --stats -e 'ssh -p ${port}' ${WWW_PATH} ${user}@m${server}:${REMOTE_WWW_PATH}
-                $remote ln -sfvn ${REMOTE_WWW_PATH} ${WWW_LINK}
+                $ON_TARGET_DO ln -sfvn ${REMOTE_WWW_PATH} ${WWW_LINK}
               fi
               notify_done ;;
        * ) said_no ;;
@@ -530,8 +545,6 @@ link_full(){
 
 # Link a single file in a copied deployment folder
 link_scalpel(){
-
-  header "Promoting ${env} environment now"
 
   yn=`ask "Do you wish to scalpel (link)" "no"`
   case $yn in
