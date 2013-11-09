@@ -9,6 +9,8 @@ source "`dirname $0`"/bootshtrap/bootshtrap/autoload.sh # Autoloads the whole st
 # Associative arrays for projects in config
 unset projects
 declare -A projects
+unset remote
+declare -A remote
 
 # Globals
 DEPLOY_DIRECTORY='deploy'
@@ -39,7 +41,7 @@ main(){
   DEPLOY_PATH=${APP_BASE_PATH}'/'${DEPLOY_DIRECTORY}'/'${app}'/'${env}
   WWW_PATH=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
   REMOTE_WWW_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
-  WWW_LINK=${REMOTE_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/'${env}
+  WWW_LINK=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/'${env}
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
@@ -125,10 +127,12 @@ check_arguments(){
   for project_slug in "${!projects[@]}"; do
     if [ "$app" = "$project_slug" ]; then
       type=${projects["$project_slug"]}
-      host=${remote["$project_slug", "host"]}
-      port=${remote["$project_slug", "port"]}
-      path=${remote["$project_slug", "path"]}
-      user=${remote["$project_slug", "user"]}
+      if [ ${remote["$project_slug", "host"]+1} ]; then
+        host=${remote["$project_slug", "host"]}
+        port=${remote["$project_slug", "port"]}
+        path=${remote["$project_slug", "path"]}
+        user=${remote["$project_slug", "user"]}
+      fi
       project_found=true
     fi
   done
@@ -150,7 +154,7 @@ check_arguments(){
        fi;;
   esac
 
-  if [ ! "$server" = "" ]; then
+  if [ ! "${host-}" = "" ]; then
     ack "Deploying to remote server"
     remote="ssh -t -t -t ${user}@${host} -p ${port}"
     REMOTE_APP_BASE_PATH=${path}
@@ -182,7 +186,7 @@ init_repo(){
   fi
 
   # We create a dir for the app if it doesn't already exist
-  mkdir $app
+  mkdir ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/$app
 
   # Check the existence of branches
   HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
