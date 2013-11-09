@@ -45,17 +45,21 @@ main(){
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
-  PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/${WWW_DIRECTORY}/${app} | sed -n "s|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
-  
+  if [ ! "$INIT" = 1 ]; then
+    PREVIOUS_PATHS=`ls ${APP_BASE_PATH}/${WWW_DIRECTORY}/${app} | sed -n "s|rel\-${env}\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | cut -d_ -f2`
+  fi
+
   # Check user
   ack "Current user is" $(whoami)
 
   # Application name and type
-  ack "This application ${app} (${env}) is" "$type"
+  ack "This application ${app} is" "$type"
 
   indicate "Deployment path" ${DEPLOY_PATH}
-  indicate "Release www path" ${WWW_PATH}
-  indicate "Remote www path" ${REMOTE_WWW_PATH}
+  if [ ! "$INIT" = 1 ]; then
+    indicate "Release www path" ${WWW_PATH}
+    indicate "Remote www path" ${REMOTE_WWW_PATH}
+  fi
   indicate "Live www path" ${WWW_LINK}
 
   # Init or Deploy ?
@@ -155,10 +159,11 @@ check_arguments(){
   esac
 
   if [ ! "${host-}" = "" ]; then
-    ack "Deploying to remote server"
+    indicate "Deployment target" ${host}
     remote="ssh -t -t -t ${user}@${host} -p ${port}"
     REMOTE_APP_BASE_PATH=${path}
   else
+    indicate "Deployment target" "localhost"
     remote=""
     REMOTE_APP_BASE_PATH=${APP_BASE_PATH}
   fi
@@ -181,7 +186,7 @@ init_repo(){
 
   DIR_PATH=`readlink -f "${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}"` # Get rid of symlinks and get abs path
   if [[ -d "${DIR_PATH}" ]] ; then # now we're testing
-    notify_error "This application already has a deployment folder ($app)"
+    notify_error "This application already has a deployment folder ($app). Delete the whole folder and retry."
     error_exit
   fi
 
@@ -223,15 +228,15 @@ init_repo(){
       if [ "$type" = "symfony2" ]; then
         cd web
         ln -s ../../uploads uploads
-        chmod 775 uploads
+        # chmod 775 uploads
 
         # var/sessions for sessions storage
         cd app
         ln -s ../../var/beta var
-        chmod 775 var
+        # chmod 775 var
         cd var
         mkdir sessions
-        chmod 775 sessions
+        # chmod 775 sessions
       fi
 
     fi
@@ -295,7 +300,7 @@ init_repo(){
   indicate "Live Deploy path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}
   indicate " --> tracking branch " ${LIVE_BRANCH}
 
-  indicate "Web path" ${APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
+  indicate "Web path" ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
   clear
 
   # Done
