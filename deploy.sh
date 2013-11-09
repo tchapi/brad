@@ -38,7 +38,8 @@ main(){
   timestamp=`date '+%s'`
   DEPLOY_PATH=${APP_BASE_PATH}'/'${DEPLOY_DIRECTORY}'/'${app}'/'${env}
   WWW_PATH=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
-  WWW_LINK=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/'${env}
+  REMOTE_WWW_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
+  WWW_LINK=${REMOTE_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/'${env}
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
@@ -52,6 +53,7 @@ main(){
 
   indicate "Deployment path" ${DEPLOY_PATH}
   indicate "Release www path" ${WWW_PATH}
+  indicate "Remote www path" ${REMOTE_WWW_PATH}
   indicate "Live www path" ${WWW_LINK}
 
   # Go into the deploy directory
@@ -86,6 +88,7 @@ main(){
         git_pull
         if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
         deploy
+        upgrade_db
         link_full
         if [ "$CLEANUP" = 1 ]; then
           cleanup
@@ -93,9 +96,9 @@ main(){
       fi
     fi
 
-    update_changelog
-    install_crontabs
-    restart_apache
+    update_changelog 
+    install_crontabs # remote
+    restart_apache # remote
 
     # ---- END : DEPLOY ----
   fi
@@ -104,7 +107,7 @@ main(){
 
 }
 
-# Check that app, env and oter arguments are ok
+# Check that app, env and other arguments are ok
 check_arguments(){
 
   if [ $# -ge 3 ] && [ "$ROLLBACK" = 1 ]; then
@@ -122,6 +125,10 @@ check_arguments(){
   for project_slug in "${!projects[@]}"; do
     if [ "$app" = "$project_slug" ]; then
       type=${projects["$project_slug"]}
+      host=${remote["$project_slug", "host"]}
+      port=${remote["$project_slug", "port"]}
+      path=${remote["$project_slug", "path"]}
+      user=${remote["$project_slug", "user"]}
       project_found=true
     fi
   done
@@ -142,6 +149,15 @@ check_arguments(){
         error_exit
        fi;;
   esac
+
+  if [ ! "$server" = "" ]; then
+    ack "Deploying to remote server"
+    remote="ssh -t -t -t ${user}@${host} -p ${port}"
+    REMOTE_APP_BASE_PATH=${path}
+  else
+    remote=""
+    REMOTE_APP_BASE_PATH=${APP_BASE_PATH}
+  fi
 
 }
 
@@ -250,20 +266,17 @@ init_repo(){
 
   fi
 
-  # Creating Web folders
-  cd ${APP_BASE_PATH}/${WWW_DIRECTORY}/
-  mkdir $app
+  # Creating Web folders 
+  $remote mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
 
   # Rights
   if [ "$type" = "symfony2" ]; then
     
-    cd ${APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
-    
-    mkdir uploads
-    chmod 775 uploads
+    $remote mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+    $remote chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
 
-    mkdir var
-    chmod 775 var
+    $remote mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
+    $remote chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/var
 
   fi
 
@@ -408,25 +421,6 @@ deploy(){
 
     cd ${WWW_PATH}
 
-    clear
-    ack "Upcoming changes to the schema"
-    UPDATES=`php app/console doctrine:schema:update --dump-sql`
-
-    clear
-    echo ${UPDATES}
-    clear
-    
-    if ! [ "$UPDATES" = "Nothing to update - your database is already in sync with the current entity metadata." ]; then
-
-      yn=`ask "Do you wish to update the schema" "no"`
-      case $yn in
-          [Yy]* ) said_yes "Updating schema"
-                  php app/console doctrine:schema:update --force # To be replaced with migrations later on ?
-                  ;;
-          * ) said_no ;;
-      esac
-    fi
-
     # Dump assetic assets
     php app/console assets:install web --symlink
     php app/console assetic:dump --env=prod --no-debug
@@ -442,6 +436,37 @@ deploy(){
 
   clear
   ack "Deployment is done !"
+
+}
+
+upgrade_db() {
+
+  # Symfony 2 Stuff
+  if [ "$type" = "symfony2" ]; then
+
+    clear
+    ack "Upcoming changes to the schema"
+    UPDATES=`$remote php ${REMOTE_WWW_PATH}/app/console doctrine:schema:update --dump-sql`
+
+    clear
+    echo ${UPDATES}
+    clear
+    
+    if ! [ "$UPDATES" = "Nothing to update - your database is already in sync with the current entity metadata." ]; then
+
+      yn=`ask "Do you wish to update the schema" "no"`
+      case $yn in
+          [Yy]* ) said_yes "Updating schema"
+                  $remote php ${REMOTE_WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  ;;
+          * ) said_no ;;
+      esac
+    fi
+
+  fi
+
+  clear
+  ack "Database updated !"
 
 }
 
@@ -480,7 +505,13 @@ link_full(){
   yn=`ask "Do you wish to promote (link)" "no"`
   case $yn in
       [Yy]* ) said_yes "Linking"
+              # Local
               ln -sfvn ${WWW_PATH} ${WWW_LINK}
+              # Remote
+              if [ ! "$remote" = "" ]; then
+                rsync -av --del --stats -e 'ssh -p ${port}' ${WWW_PATH} ${user}@m${server}:${REMOTE_WWW_PATH}
+                $remote ln -sfvn ${REMOTE_WWW_PATH} ${WWW_LINK}
+              fi
               notify_done ;;
        * ) said_no ;;
   esac
