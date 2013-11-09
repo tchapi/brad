@@ -162,13 +162,11 @@ check_arguments(){
 
   if [ ! "${host-}" = "" ]; then
     indicate "Deployment target" ${host}
-    remote="ssh -t -t -t ${user}@${host} -p ${port} bash -c \"' "
-    remote_end="\"'"
+    remote="ssh -t -t -t ${user}@${host} -p ${port}"
     REMOTE_APP_BASE_PATH=${path}
   else
     indicate "Deployment target" "localhost"
     remote=""
-    remote_end=""
     REMOTE_APP_BASE_PATH=${APP_BASE_PATH}
   fi
 
@@ -280,11 +278,7 @@ init_repo(){
   fi
 
   # Creating Web folders 
-  $remote 
-    if [[ ! -d ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app} ]]; then
-      mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
-    fi
-  $remote_end
+  $remote if [[ ! -d ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app} ]]; then mkdir ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app} fi
 
   # Rights
   if [ "$type" = "symfony2" ]; then
