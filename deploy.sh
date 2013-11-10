@@ -320,13 +320,14 @@ init_repo(){
   ack "Created environnements :"
   indicate "Remote repository" ${GIT_URL}
 
-  indicate "Staging Deploy path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}
+  indicate "Staging Deployment path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}
   indicate " --> tracking branch" ${STAGING_BRANCH}
 
-  indicate "Live Deploy path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}
+  indicate "Live Deployment path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}
   indicate " --> tracking branch " ${LIVE_BRANCH}
 
-  indicate "Web path" ${host}${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
+  indicate "Deployment target" ${remote}
+  indicate "Web path" ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
   clear
 
   # Done
