@@ -442,7 +442,7 @@ scalpel(){
   indicate "Duplicating actual "${env}" environment into" ${SCALPEL_PATH}
 
   # Copy all files from current release to a new release
-  mkdir ${SCALPEL_PATH}
+  mkdir -p ${SCALPEL_PATH}
   rsync -rlpt ${WWW_LINK}/. ${SCALPEL_PATH}/.
   
   indicate "Scalpeling "${env}" environment to partial release"
@@ -541,7 +541,6 @@ upgrade_db() {
 
     clear
     echo ${UPDATES}
-    clear
     
     if ! [ "$UPDATES" = "Nothing to update - your database is already in sync with the current entity metadata." ]; then
 
@@ -591,12 +590,14 @@ link_full(){
   yn=`ask "Do you wish to promote (link)" "no"`
   case $yn in
       [Yy]* ) said_yes "Linking"
-              # Local
-              ln -sfvn ${RELEASE_PATH} ${WWW_LINK}
-              # Remote
-              if [ ! "$remote" = "" ]; then
+              if [ ! "$ON_TARGET_DO" = "" ]; then
+                # Remote
                 rsync -av --del --stats -e 'ssh -p ${port}' ${RELEASE_PATH} ${user}@m${server}:${WWW_PATH}
                 $ON_TARGET_DO ln -sfvn ${WWW_PATH} ${WWW_LINK}
+              else
+                # Local
+                cp ${RELEASE_PATH} ${WWW_PATH}
+                ln -sfvn ${WWW_PATH} ${WWW_LINK}
               fi
               notify_done ;;
        * ) said_no ;;
