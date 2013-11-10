@@ -383,7 +383,6 @@ update_changelog(){
   fi
 
   indicate "Writing CHANGELOG to" ${CHANGELOG_PATH}
-  clear
 
   echo "# CHANGELOG" > ${CHANGELOG_PATH}
 
@@ -535,7 +534,6 @@ upgrade_db() {
   # Symfony 2 Stuff
   if [ "$type" = "symfony2" ]; then
 
-    clear
     ack "Upcoming changes to the schema"
     UPDATES=`php ${RELEASE_PATH}/app/console doctrine:schema:update --dump-sql`
 
@@ -592,7 +590,7 @@ link_full(){
       [Yy]* ) said_yes "Linking"
               if [ ! "$ON_TARGET_DO" = "" ]; then
                 # Remote
-                rsync -a --del --stats -e "ssh -p ${port}" ${RELEASE_PATH}/. ${user}@${host}:${WWW_PATH}
+                rsync -a --del -e "ssh -p ${port}" ${RELEASE_PATH}/. ${user}@${host}:${WWW_PATH}
                 $ON_TARGET_DO ln -sfvn ${WWW_PATH} ${WWW_LINK}
               else
                 # Local
@@ -631,7 +629,7 @@ install_crontabs(){
                 AUTOMATED_KEYWORD_START="\#\[AUTOMATED\:START\:${app}\:${env}\]"
                 AUTOMATED_KEYWORD_END="\#\[AUTOMATED\:END\:${app}\:${env}\]"
 
-                CRONTABS="`$ON_TARGET_DO cat "${DEPLOY_PATH}/crontabs"`"
+                CRONTABS="`cat "${DEPLOY_PATH}/crontabs"`"
 
                 NEW_CRON=${AUTOMATED_KEYWORD_START//\\}$'\n'${CRONTABS}$'\n'${AUTOMATED_KEYWORD_END//\\}
 
@@ -649,10 +647,11 @@ install_crontabs(){
                 fi
              
                 # Remove automated tasks
-                $ON_TARGET_DO crontab -l | sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" | crontab -
+                crons=$($ON_TARGET_DO crontab -l)
+                crons=$(sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" <<< $crons)
 
                 # Install new crontab
-                $ON_TARGET_DO bash -c "'(crontab -l ; echo $NEW_CRON) | crontab -'"
+                echo "crons" | $ON_TARGET_DO crontab -
 
                 # Outputs to check
                 $ON_TARGET_DO crontab -l
