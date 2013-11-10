@@ -588,6 +588,7 @@ release(){
   fi
 
   # Warming up caches
+  $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
   $ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup
   $ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup --env=prod
 
