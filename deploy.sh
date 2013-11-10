@@ -644,7 +644,7 @@ install_crontabs(){
                 $ON_TARGET_DO crontab -l | sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" | crontab -
 
                 # Install new crontab
-                $ON_TARGET_DO (crontab -l ; echo "${NEW_CRON}")| crontab -
+                $ON_TARGET_DO bash -c "'(crontab -l ; echo $NEW_CRON) | crontab -'"
 
                 # Outputs to check
                 $ON_TARGET_DO crontab -l
