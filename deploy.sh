@@ -170,7 +170,7 @@ check_arguments(){
     error_exit
   fi
 
-  indicate "Deploying" ${app}
+  warn "Deploying" ${app}
 
   env="${2-}"
   # Checking environment is good
@@ -188,7 +188,7 @@ check_arguments(){
     ON_TARGET_DO="ssh -t -t -t ${user}@${host} -p ${port}"
     REMOTE_APP_BASE_PATH=${path}
   else
-    remote="`whoami`@localhost"
+    remote="localhost"
     ON_TARGET_DO=""
     REMOTE_APP_BASE_PATH=${APP_BASE_PATH}
   fi
@@ -216,7 +216,7 @@ init_repo(){
   fi
 
   # We create a dir for the app if it doesn't already exist
-  mkdir ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/$app
+  mkdir -p ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/$app
 
   # Check the existence of branches
   HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
@@ -280,7 +280,6 @@ init_repo(){
   fi
 
   # Installing PROD deployed environment
-
   cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
   mkdir ${LIVE_DIRECTORY}
 
@@ -296,18 +295,18 @@ init_repo(){
     php composer.phar install --prefer-dist
 
     if [ "$type" = "symfony2" ]; then
-      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/web
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/web
       ln -s ../../uploads uploads
 
       # var/sessions for sessions storage
-      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/app
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/app
       ln -s ../../var/prod var
 
     fi
 
   fi
 
-  # Rights
+  # Session folder
   if [ "$type" = "symfony2" ]; then
     
     $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var/${LIVE_DIRECTORY}/sessions
