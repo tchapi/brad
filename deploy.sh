@@ -88,9 +88,6 @@ main(){
   else
     # ---- DEPLOY ----
 
-    # Go into the deploy directory
-    cd ${DEPLOY_PATH}
-
     if [ $# -ge 3 ]; then
 
       git_pull
@@ -115,10 +112,11 @@ main(){
   
         header "Preparing ${env} environment for release"
         deploy
+        release
         update_changelog 
 
         header "Promoting ${env} environment now"
-        release
+        transfer
         upgrade_db
         link_full
 
@@ -366,54 +364,6 @@ git_pull(){
 
 }
 
-# Update Changelog
-update_changelog(){
-
-  # Update CHANGELOG.txt
-  CHANGELOG_NAME='CHANGELOG.txt'
-
-  if [ "$ROLLBACK" = 1 ]; then
-    BASE_CHANGELOG_PATH=${LAST_PATH}
-  else
-    BASE_CHANGELOG_PATH=${RELEASE_PATH}
-  fi
-  
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
-    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
-  elif [ "$type" = "standalone" ]; then
-    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
-  fi
-
-  indicate "Writing CHANGELOG to" ${CHANGELOG_PATH}
-
-  echo "# CHANGELOG" > ${CHANGELOG_PATH}
-
-  if [ "$ROLLBACK" = 1 ]; then
-
-    NOW=$(date +"%c")
-    echo "# Last update : ${NOW}" >> ${CHANGELOG_PATH}
-    echo "# ! Site is now in ROLLBACKED state !" >> ${CHANGELOG_PATH}
-    echo "" >> ${CHANGELOG_PATH}
-
-  else 
-
-    cd ${DEPLOY_PATH}
-
-    current_date=`git log -1 --format="%ad"`
-    echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
-    echo "" >> ${CHANGELOG_PATH}
-
-    change_log=`git log --no-merges --date-order --date=rfc | \
-      sed -e '/^commit.*$/d' | \
-      awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
-      sed -e 's/^Author: //g' | \
-      sed -e 's/>Date:   \(.*\)/>\t\1/g' | \
-      sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' >> ${CHANGELOG_PATH}`
-
-  fi
-
-}
-
 # Builds minified JS if needed (if exists /minify.php)
 build_js(){
 
@@ -499,6 +449,11 @@ deploy(){
   
   fi
 
+}
+
+# Release the current deployment
+release(){
+
   # Copy all files to the destination folder
   mkdir -p ${RELEASE_PATH}
 
@@ -520,7 +475,55 @@ deploy(){
   fi
 
   clear
-  ack "Deployment is done !"
+  ack "Deployment and release is done !"
+
+}
+
+# Update Changelog
+update_changelog(){
+
+  # Update CHANGELOG.txt
+  CHANGELOG_NAME='CHANGELOG.txt'
+
+  if [ "$ROLLBACK" = 1 ]; then
+    BASE_CHANGELOG_PATH=${LAST_PATH}
+  else
+    BASE_CHANGELOG_PATH=${RELEASE_PATH}
+  fi
+  
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
+  elif [ "$type" = "standalone" ]; then
+    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
+  fi
+
+  indicate "Writing CHANGELOG to" ${CHANGELOG_PATH}
+
+  echo "# CHANGELOG" > ${CHANGELOG_PATH}
+
+  if [ "$ROLLBACK" = 1 ]; then
+
+    NOW=$(date +"%c")
+    echo "# Last update : ${NOW}" >> ${CHANGELOG_PATH}
+    echo "# ! Site is now in ROLLBACKED state !" >> ${CHANGELOG_PATH}
+    echo "" >> ${CHANGELOG_PATH}
+
+  else 
+
+    cd ${DEPLOY_PATH}
+
+    current_date=`git log -1 --format="%ad"`
+    echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
+    echo "" >> ${CHANGELOG_PATH}
+
+    change_log=`git log --no-merges --date-order --date=rfc | \
+      sed -e '/^commit.*$/d' | \
+      awk '/^Author/ {sub(/\\$/,""); getline t; print $0 t; next}; 1' | \
+      sed -e 's/^Author: //g' | \
+      sed -e 's/>Date:   \(.*\)/>\t\1/g' | \
+      sed -e 's/^\(.*\) \(\)\t\(.*\)/\3    \1    \2/g' >> ${CHANGELOG_PATH}`
+
+  fi
 
 }
 
@@ -577,7 +580,8 @@ revert(){
 
 }
 
-release(){
+# Send the release folder to the frontal web server 
+transfer(){
 
   if [ ! "$ON_TARGET_DO" = "" ]; then
     # Remote
@@ -589,7 +593,7 @@ release(){
 
   # Warming up caches
   $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
-  $ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup
+  #$ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup
   $ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup --env=prod
 
   # Ensure that cache, logs are writable
