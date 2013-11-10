@@ -184,8 +184,8 @@ check_arguments(){
   esac
 
   if [ ! "${host-}" = "" ]; then
-    ON_TARGET_DO="ssh -t -t -t ${user}@${host} -p ${port}"
     remote="${user}@${host}:${port}"
+    ON_TARGET_DO="ssh -t -t -t ${user}@${host} -p ${port}"
     REMOTE_APP_BASE_PATH=${path}
   else
     remote="`whoami`@localhost"
@@ -269,7 +269,7 @@ init_repo(){
 
     fi
 
-    # Rights
+    # Session folder
     if [ "$type" = "symfony2" ]; then
      
       $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var/${STAGING_DIRECTORY}/sessions

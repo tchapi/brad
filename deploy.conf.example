@@ -1,5 +1,9 @@
-# The base path for your www folder :
+# The base path for your deployment folder :
 APP_BASE_PATH='/home/user'
 
-# Indicate an array of project here :
-projects["my_project"]="standalone" # Can be "symfony2" as well for now
+# Indicate an array of project here, for example :
+projects["my_project"]="standalone" # Can be "symfony2" or "silex" as well, for now
+  remote["my_project", "host"]="myserver.com"
+  remote["my_project", "port"]="22" # For SSH
+  remote["my_project", "user"]="patrick"
+  remote["my_project", "path"]="/home/patrick/web"
