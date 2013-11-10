@@ -652,7 +652,7 @@ install_crontabs(){
                 crons=${crons}$'\n'${NEW_CRON}
 
                 # Install new crontab
-                $ON_TARGET_DO echo "$crons" | crontab -
+                $ON_TARGET_DO bash -c "' echo \"$crons\" | crontab -'"
 
                 # Outputs to check
                 $ON_TARGET_DO crontab -l
