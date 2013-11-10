@@ -649,9 +649,10 @@ install_crontabs(){
                 # Remove automated tasks
                 crons=$($ON_TARGET_DO crontab -l)
                 crons=$(sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" <<< $crons)
+                crons=${crons}$'\n'${NEW_CRON}
 
                 # Install new crontab
-                echo "$crons" | $ON_TARGET_DO crontab
+                $ON_TARGET_DO echo "$crons" | crontab -
 
                 # Outputs to check
                 $ON_TARGET_DO crontab -l
