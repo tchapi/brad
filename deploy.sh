@@ -315,7 +315,8 @@ init_repo(){
   fi
 
   # Summary
-
+  
+  clear
   ack "Created environnements :"
   indicate "Remote repository" ${GIT_URL}
 
