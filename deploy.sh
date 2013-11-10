@@ -91,11 +91,11 @@ main(){
     if [ $# -ge 3 ]; then
 
       git_pull
-      update_changelog 
 
       if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
 
       scalpel
+      update_changelog 
 
       header "Promoting ${env} environment now"
       link_scalpel
@@ -107,12 +107,12 @@ main(){
       else
 
         git_pull
-        update_changelog 
 
         if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
   
         header "Preparing ${env} environment for release"
         deploy
+        update_changelog 
 
         header "Promoting ${env} environment now"
         upgrade_db
@@ -315,7 +315,7 @@ init_repo(){
   fi
 
   # Summary
-  
+
   clear
   ack "Created environnements :"
   indicate "Remote repository" ${GIT_URL}
