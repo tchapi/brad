@@ -516,13 +516,6 @@ deploy(){
     # Dump assetic assets
     php app/console assets:install web --symlink
     php app/console assetic:dump --env=prod --no-debug
-
-    # Warming up caches
-    php app/console cache:warmup
-    php app/console cache:warmup --env=prod
-
-    # Ensure that cache, logs are writable
-    chmod -R 777 app/cache app/logs # web/uploads
  
   fi
 
@@ -593,6 +586,13 @@ release(){
     # Local
     cp ${RELEASE_PATH}/. ${WWW_PATH}
   fi
+
+  # Warming up caches
+  $ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup
+  $ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup --env=prod
+
+  # Ensure that cache, logs are writable
+  $ON_TARGET_DO chmod -R 777 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
 
 }
 
