@@ -14,6 +14,7 @@ declare -A remote
 
 # Globals
 DEPLOY_DIRECTORY='deploy'
+RELEASE_DIRECTORY='release'
 WWW_DIRECTORY='www'
 
 # Live branch and directory
@@ -38,9 +39,11 @@ main(){
 
   date_today=`date '+%Y-%m-%d'`
   timestamp=`date '+%s'`
+  
   DEPLOY_PATH=${APP_BASE_PATH}'/'${DEPLOY_DIRECTORY}'/'${app}'/'${env}
-  WWW_PATH=${APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
-  REMOTE_WWW_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
+  RELEASE_PATH=${APP_BASE_PATH}'/'${RELEASE_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
+  
+  WWW_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
   WWW_LINK=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/'${env}
 
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
@@ -60,11 +63,11 @@ main(){
 
   indicate "Deployment path" ${DEPLOY_PATH}
   if [ ! "$INIT" = 1 ]; then
-    indicate "Release www path" ${WWW_PATH}
-    indicate "Remote www path" ${REMOTE_WWW_PATH}
+    indicate "Release www path" ${RELEASE_PATH}
+    indicate "Live www path" ${WWW_PATH}
   fi
   indicate "Deployment target" ${remote}
-  indicate "Live www path" ${WWW_LINK}
+  indicate "Live www link" ${WWW_LINK}
 
   # Init or Deploy ?
   if [ "$INIT" = 1 ]; then
@@ -346,16 +349,18 @@ git_pull(){
   # Git all the way
   ack "Checking out remote branch from origin"
   clear
-  echo "   | "`git reset --hard HEAD`
-  echo "   | "`git pull origin`
-  echo "   | "`git status`
+  echo `git reset --hard HEAD`
+  echo `git pull origin`
+  echo `git status`
   clear
 
   revision=`git log -n 1 --pretty="format:%h %ci"`
   indicate "Deployment folder updated to revision" ${revision}
 
   revision_safe=`git log -n 1 --pretty="format:%h"`
-  WWW_PATH=${WWW_PATH}"-"${revision_safe}
+
+  # Amend the deployed path
+  RELEASE_PATH=${RELEASE_PATH}"-"${revision_safe}
 
 }
 
@@ -368,7 +373,7 @@ update_changelog(){
   if [ "$ROLLBACK" = 1 ]; then
     BASE_CHANGELOG_PATH=${LAST_PATH}
   else
-    BASE_CHANGELOG_PATH=${WWW_PATH}
+    BASE_CHANGELOG_PATH=${RELEASE_PATH}
   fi
   
   if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
@@ -432,7 +437,7 @@ build_js(){
 # Scalpels only a single file
 scalpel(){
 
-  SCALPEL_PATH=${WWW_PATH}"_scalpel"
+  SCALPEL_PATH=${RELEASE_PATH}"_scalpel"
 
   indicate "Duplicating actual "${env}" environment into" ${SCALPEL_PATH}
 
@@ -494,17 +499,18 @@ deploy(){
   fi
 
   # Copy all files to the destination folder
-  mkdir ${WWW_PATH}
+  mkdir -p ${RELEASE_PATH}
+
   if [ -f "${DEPLOY_PATH}/exclude.rsync" ]; then
-    rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
+    rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
   else
-    rsync -rlpt ${DEPLOY_PATH}/. ${WWW_PATH}/.
+    rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/.
   fi
 
   # Symfony 2 Stuff
   if [ "$type" = "symfony2" ]; then
 
-    cd ${WWW_PATH}
+    cd ${RELEASE_PATH}
 
     # Dump assetic assets
     php app/console assets:install web --symlink
@@ -531,7 +537,7 @@ upgrade_db() {
 
     clear
     ack "Upcoming changes to the schema"
-    UPDATES=`$ON_TARGET_DO php ${REMOTE_WWW_PATH}/app/console doctrine:schema:update --dump-sql`
+    UPDATES=`$ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
 
     clear
     echo ${UPDATES}
@@ -542,7 +548,7 @@ upgrade_db() {
       yn=`ask "Do you wish to update the schema" "no"`
       case $yn in
           [Yy]* ) said_yes "Updating schema"
-                  $ON_TARGET_DO php ${REMOTE_WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  $ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
                   ;;
           * ) said_no ;;
       esac
@@ -586,11 +592,11 @@ link_full(){
   case $yn in
       [Yy]* ) said_yes "Linking"
               # Local
-              ln -sfvn ${WWW_PATH} ${WWW_LINK}
+              ln -sfvn ${RELEASE_PATH} ${WWW_LINK}
               # Remote
               if [ ! "$remote" = "" ]; then
-                rsync -av --del --stats -e 'ssh -p ${port}' ${WWW_PATH} ${user}@m${server}:${REMOTE_WWW_PATH}
-                $ON_TARGET_DO ln -sfvn ${REMOTE_WWW_PATH} ${WWW_LINK}
+                rsync -av --del --stats -e 'ssh -p ${port}' ${RELEASE_PATH} ${user}@m${server}:${WWW_PATH}
+                $ON_TARGET_DO ln -sfvn ${WWW_PATH} ${WWW_LINK}
               fi
               notify_done ;;
        * ) said_no ;;
@@ -672,7 +678,7 @@ cleanup(){
               for f in $PREVIOUS_PATHS
               do
                 PATH_TO_DELETE=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/$f
-                if ! [ $PATH_TO_DELETE = $REMOTE_WWW_PATH ]; then
+                if ! [ $PATH_TO_DELETE = $WWW_PATH ]; then
                   $ON_TARGET_DO rm -fR $PATH_TO_DELETE
                   warn "Removed" $PATH_TO_DELETE
                 fi
