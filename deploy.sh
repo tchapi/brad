@@ -537,7 +537,7 @@ upgrade_db() {
 
     clear
     ack "Upcoming changes to the schema"
-    UPDATES=`$ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
+    UPDATES=`php ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
 
     clear
     echo ${UPDATES}
