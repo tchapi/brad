@@ -118,6 +118,7 @@ main(){
         update_changelog 
 
         header "Promoting ${env} environment now"
+        release
         upgrade_db
         link_full
 
@@ -361,6 +362,7 @@ git_pull(){
 
   # Amend the deployed path
   RELEASE_PATH=${RELEASE_PATH}"-"${revision_safe}
+  WWW_PATH=${WWW_PATH}"-"${revision_safe}
 
 }
 
@@ -582,21 +584,25 @@ revert(){
 
 }
 
+release(){
+
+  if [ ! "$ON_TARGET_DO" = "" ]; then
+    # Remote
+    rsync -a --del -e "ssh -p ${port}" ${RELEASE_PATH}/. ${user}@${host}:${WWW_PATH}
+  else
+    # Local
+    cp ${RELEASE_PATH}/. ${WWW_PATH}
+  fi
+
+}
+
 # Link the full folder
 link_full(){
 
   yn=`ask "Do you wish to promote (link)" "no"`
   case $yn in
       [Yy]* ) said_yes "Linking"
-              if [ ! "$ON_TARGET_DO" = "" ]; then
-                # Remote
-                rsync -a --del -e "ssh -p ${port}" ${RELEASE_PATH}/. ${user}@${host}:${WWW_PATH}
-                $ON_TARGET_DO ln -sfvn ${WWW_PATH} ${WWW_LINK}
-              else
-                # Local
-                cp ${RELEASE_PATH}/. ${WWW_PATH}
-                ln -sfvn ${WWW_PATH} ${WWW_LINK}
-              fi
+              $ON_TARGET_DO ln -sfvn ${WWW_PATH} ${WWW_LINK}
               notify_done ;;
        * ) said_no ;;
   esac
@@ -651,10 +657,6 @@ install_crontabs(){
                 crons=$(sed 's/\r//g' <<< "$crons")
                 crons=$(sed "/${AUTOMATED_KEYWORD_START}/,/${AUTOMATED_KEYWORD_END}/d" <<< "$crons")
                 crons="${crons}"$'\n'"${NEW_CRON}"
-
-                echo '----'
-                echo "$crons" | cat -v
-                echo '----'
 
                 # Install new crontab
                 $ON_TARGET_DO bash -c "'echo \"$crons\" | crontab -'"
