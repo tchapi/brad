@@ -592,7 +592,7 @@ link_full(){
       [Yy]* ) said_yes "Linking"
               if [ ! "$ON_TARGET_DO" = "" ]; then
                 # Remote
-                rsync -av --del --stats -e 'ssh -p ${port}' ${RELEASE_PATH} ${user}@m${server}:${WWW_PATH}
+                rsync -av --del --stats -e 'ssh -p ${port}' ${RELEASE_PATH} ${user}@${host}:${WWW_PATH}
                 $ON_TARGET_DO ln -sfvn ${WWW_PATH} ${WWW_LINK}
               else
                 # Local
