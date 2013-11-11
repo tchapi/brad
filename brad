@@ -110,6 +110,8 @@ main(){
 
       if [ "$ROLLBACK" = 1 ]; then
         revert
+        update_changelog 
+
       else
 
         git_pull
@@ -134,10 +136,11 @@ main(){
 
       fi
 
+      install_crontabs
+
     fi
 
-    install_crontabs # remote
-    restart_apache # remote
+    restart_apache
 
     # ---- END : DEPLOY ----
   fi
