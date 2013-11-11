@@ -61,7 +61,8 @@ main(){
   # Application name and type
   ack "This application ${app} is" ${type}
   ack "Deployment target" ${remote}
-
+  clear
+  
   indicate "Local deployment path" ${DEPLOY_PATH}
 
   if [ ! "$INIT" = 1 ]; then
@@ -573,6 +574,8 @@ transfer(){
   # Ensure that cache, logs are writable
   $ON_TARGET_DO chmod -R 777 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
 
+  clear
+
 }
 
 upgrade_db() {
@@ -587,7 +590,7 @@ upgrade_db() {
     echo ${UPDATES}
     clear
 
-    if ! [[ "$UPDATES" = *Nothing to update* ]]; then
+    if ! [[ "$UPDATES" =~ "Nothing to update" ]]; then
 
       yn=`ask "Do you wish to update the schema" "no"`
       case $yn in

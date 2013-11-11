@@ -1,9 +1,9 @@
 # Deployment scripts from a remote Git server
 - - -
 
-Make easy atomic deployments from Github / Bitbucket, or any remote Git server
+Make easy atomic deployments from Github / Bitbucket, or any remote Git server.
 
-The package consists of two scripts : `init.sh` and `deploy.sh`, and a configuration file : `deploy.conf`.
+The package consists of one script : `deploy.sh`, and a configuration file : `deploy.conf`.
 It is based on the bootshtrap shell micro-library (see https://github.com/tchapi/bootshtrap).
 
 > NB : You will have to copy `deploy.conf.example` to `deploy.conf` for the scripts to work. You should as well make sure that `deploy.sh` is executable, or run `chmod +x deploy.sh` in case
@@ -21,12 +21,26 @@ This will be the root directory where the deployments will take place. This dire
 ```
 APP_BASE_PATH
   |-- deploy
+  `-- release
+```
+
+`release` and `deploy` are directories that should not be served by your webserver.
+
+If your applications are to be served from the same server, the path will also have :
+
+```
+APP_BASE_PATH
+  `-- wwww
+```
+
+Otherwise, your remote server (for each application) will have the following structure (see configuration) :
+
+```
+remote["app_1", "path"]
   `-- www
 ```
 
-`www` should be your webserver root and `deploy` should not be served.
-
-_NB : Be sure to have no trailing slash at the end of your path_
+_NB : Be sure to have **no** trailing slash at the end of your paths_
 
 ## Configurating for deployement
 
@@ -35,9 +49,20 @@ Before a project can be initialized, you have to add it in the `deploy.conf` con
 ```bash
 projects["app_1"]="standalone"
 projects["my_symfony2_app"]="symfony2"
-```                            
+```          
 
 `standalone` references a standard project, whereas `symfony2` (or `silex`) explicitely references a project that is based on the Symfony2 (or Silex) framework. This is used when initing and deploying to accomplish tasks such as cache warmup, schema update, etc ...
+
+If a project is to be deployed on a remote target, you should add the relevant information for connecting to the server :
+
+```bash
+remote["app_1", "host"]="myserver.com"
+remote["app_1", "port"]="22"
+remote["app_1", "user"]="john"
+remote["app_1", "path"]="/home/webuser/sites"
+```                  
+
+> NB : It's easier if the target remote server has the key of the deployment server, to avoid password prompting.
 
 ## Cloning and initing a project
 
@@ -49,7 +74,7 @@ $ ./deploy.sh --init git_repository my_new_app
 
 .. where `my_new_app` will be the name of your application (the directories will be created ad hoc) and `git_repository` is the url of the related git repository.
 
-The script will init the following directory structure :
+The script will init the following deployment directory structure :
 
 ```
 APP_BASE_PATH
@@ -59,6 +84,16 @@ APP_BASE_PATH
   |       |   `-- // all the stuff of app_1 from branch 'staging' of the repo
   |       `-- prod
   |           `-- // all the stuff of app_1 from branch 'live' of the repo
+  `-- release
+      `-- app_1
+          `-- // all the release directories
+```
+
+And the following front structure (on the same erver or on a remote server) :
+
+```
+APP_BASE_PATH __or__ remote["app_1", "path"]
+  |
   `-- www
       `-- app_1
           |-- uploads
@@ -70,15 +105,15 @@ APP_BASE_PATH
               `--  // all the deployed stuff from app_1/prod
 ```
 
-Your git repository **must** have two branches : `live` and `staging`.
+Your git repository **must** have at least a `live` branch that will reflect the `prod` environment. A `staging` branch is optional and would reflect the `beta` environment.
 
-Upon completion of the script, two environments are created : beta and prod.
+Upon completion of the script, one or two environments are created : prod and beta (only if the `staging` branch exists).
 
-#### Environment : beta
+##### Environment : beta
 
 This environment is going to pull the `staging` branch of the github repository
 
-#### Environment : prod
+##### Environment : prod
 
 This environment is going to pull the `live` branch of the github repository
 
@@ -101,7 +136,7 @@ $ ./deploy.sh my_app environment
 
 ... where `my_app` (the first argument) is the name of the app previously initialized, and where environnement (second argument) can be one of :
 
-  - beta (staging area)
+  - beta (staging area, if available)
   - prod (live environment)
 
 ## Deploying a single file ("scalpel")
@@ -138,7 +173,8 @@ When deploying often, you will probably clutter your `www`folder with previous u
 ```bash
 $ ./deploy.sh --cleanup my_app environment
 ```
-or 
+or
+
 ```bash
 $ ./deploy.sh -c my_app environment
 ```
