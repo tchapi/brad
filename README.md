@@ -1,7 +1,7 @@
 # Brad
 
 Build, release and deploy
-(_buid for standalone, Symfony 2 and Silex projects_)
+(_built for standalone, Symfony 2 and Silex projects_)
 
 - - -
 
@@ -145,15 +145,6 @@ $ ./brad my_app environment
   - beta (staging area, if available)
   - prod (live environment)
 
-## Deploying a single file ("scalpel")
-
-You can deploy a single file  :
-
-```bash
-$ ./brad my_app environment [file1 file2 ... ]
-```
-In this case, the previous production or staging release directory will be copied to a new release directory, and the file(s) will be replaced _in situ_ in this new directory.
-
 ## Rollbacking to a previous deployment
 
 If you haven't deleted the previous deployment directories, it is possible to rollback to a previous instance of your application. This only applies to the application itself and not to the database schema or sessions / uploads, for instance.
@@ -169,8 +160,6 @@ $ ./brad -r my_app environment
 > NB : As per the _getopt_ flavor, the options can be put anywhere in the command (after or before arguments).
 
 This will link back the `www/prod` or `www/beta` folder to the previous instance of the application, if found.
-
-> NB : It is not possible to rollback to a scalpel instance, and other supplementary arguments such as files are not valid.
 
 ## Cleaning up previous deployment folders when deploying
 

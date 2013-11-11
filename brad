@@ -94,52 +94,36 @@ main(){
   else
     # ---- DEPLOY ----
 
-    if [ $# -ge 3 ]; then
+    if [ "$ROLLBACK" = 1 ]; then
+
+      header "Reverting ${env} environment"
+      revert
+      update_changelog 
+
+    else
 
       git_pull
 
       if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
 
-      scalpel
+      header "Preparing ${env} environment for release"
+      deploy
+
+      header "Releasing ${env} environment"
+      release
       update_changelog 
 
-      header "Promoting ${env} environment now"
-      link_scalpel
+      header "Transfering ${env} environment and promoting"
+      transfer
+      upgrade_db
+      link_full
 
-    else
-
-      if [ "$ROLLBACK" = 1 ]; then
-        revert
-        update_changelog 
-
-      else
-
-        git_pull
-
-        if [ "$type" = "standalone" ] && ! [ "$ROLLBACK" = 1 ] ; then build_js; fi
-  
-        header "Preparing ${env} environment for release"
-        deploy
-
-        header "Releasing ${env} environment"
-        release
-        update_changelog 
-
-        header "Transfering ${env} environment and promoting"
-        transfer
-        upgrade_db
-        link_full
-
-        if [ "$CLEANUP" = 1 ]; then
-          cleanup
-        fi
-
-      fi
+      if [ "$CLEANUP" = 1 ]; then cleanup; fi
 
       install_crontabs
 
     fi
-
+    
     restart_apache
 
     # ---- END : DEPLOY ----
@@ -395,31 +379,6 @@ build_js(){
 
 }
 
-
-# Scalpels only a single file
-scalpel(){
-
-  SCALPEL_PATH=${RELEASE_PATH}"_scalpel"
-
-  indicate "Duplicating actual "${env}" environment into" ${SCALPEL_PATH}
-
-  # Copy all files from current release to a new release
-  mkdir -p ${SCALPEL_PATH}
-  rsync -rlpt ${WWW_LINK}/. ${SCALPEL_PATH}/.
-  
-  indicate "Scalpeling "${env}" environment to partial release"
-  indicate "\_Files : "
-  
-  # Checking we have files and copying
-  for x in "$@"; do 
-    if [ -e ${DEPLOY_PATH}"/"$x ]; then
-      warn "   " $x
-      rsync -rlptv --inplace ${DEPLOY_PATH}/$x ${SCALPEL_PATH}/$x
-    fi
-  done
-
-}
-
 # Deploys to current release
 deploy(){
 
@@ -558,6 +517,7 @@ revert(){
   else
 
     notify_error "No previous instance to rollback to, exiting."
+    clear
     exit 1
 
   fi
@@ -631,21 +591,6 @@ link_full(){
   esac
 
 }
-
-# Link a single file in a copied deployment folder
-link_scalpel(){
-
-  yn=`ask "Do you wish to scalpel (link)" "no"`
-  case $yn in
-      [Yy]* ) said_yes "Linking"
-              ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
-              clear
-              notify_done ;;
-       * ) said_no ;;
-  esac
-
-}
-
 
 # Install crontabs if necessary
 install_crontabs(){
