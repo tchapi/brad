@@ -541,7 +541,7 @@ update_changelog(){
 # Revert to a previous deployment folder
 revert(){
 
-  if ! [ "$LAST_PATH" = "${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/" ]; then
+  if ! [ "$LAST_PATH" = "`readlink -f $WWW_LINK`" ]; then
 
     clear
     warn "Rollback path" ${LAST_PATH}
