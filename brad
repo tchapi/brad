@@ -54,7 +54,7 @@ main(){
     PREVIOUS_PATHS=$(sed 's/\r//g' <<< "$PREVIOUS_PATHS")
 
     LAST_PATH=`$ON_TARGET_DO ls -lL ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}`
-    LAST_PATH=`echo "$LAST_PATH" | sed -n 's/\r//g' | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
+    LAST_PATH=`echo "$LAST_PATH" | sed -n "s|rel\-$env\-[0-9]\{4\}\-[0-9]\{2\}\-[0-9]\{2\}\-\([0-9]*\).*|\1_&|gp" | sort -n | tail -2 | head -1 | cut -d_ -f2`
     LAST_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}/${LAST_PATH}
     LAST_PATH=$(sed 's/\r//g' <<< "$LAST_PATH")
   fi
@@ -538,7 +538,7 @@ update_changelog(){
 # Revert to a previous deployment folder
 revert(){
 
-  if ! [ "$LAST_PATH" = "" ]; then
+  if ! [ "$LAST_PATH" = "${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/" ]; then
 
     indicate "Rollback path" ${LAST_PATH}
 
