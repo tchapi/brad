@@ -581,7 +581,7 @@ upgrade_db() {
   if [ "$type" = "symfony2" ]; then
 
     ack "Upcoming changes to the schema"
-    UPDATES=`php ${RELEASE_PATH}/app/console doctrine:schema:update --dump-sql`
+    UPDATES=`$ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
 
     clear
     echo ${UPDATES}
