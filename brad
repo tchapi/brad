@@ -69,7 +69,7 @@ main(){
   
   indicate "Local deployment path" ${DEPLOY_PATH}
 
-  if [ ! "$INIT" = 1 ]; then
+  if ! [ "$INIT" = 1 ] && ! [ "$ROLLBACK" = 1 ]; then
     indicate "Local release www path" ${RELEASE_PATH}
     indicate "Live www path" ${WWW_PATH}
     indicate "Live www link" ${WWW_LINK}
@@ -538,7 +538,7 @@ update_changelog(){
 # Revert to a previous deployment folder
 revert(){
 
-    if ! [ "$LAST_PATH" = "" ]; then
+  if ! [ "$LAST_PATH" = "" ]; then
 
     indicate "Rollback path" ${LAST_PATH}
 

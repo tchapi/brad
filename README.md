@@ -1,7 +1,7 @@
 # Brad
 
 Build, release and deploy
-(_buid for Symfony 2 and Silex projects_)
+(_buid for standalone, Symfony 2 and Silex projects_)
 
 - - -
 
