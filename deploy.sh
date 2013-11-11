@@ -59,8 +59,8 @@ main(){
   ack "Current user is" $(whoami)
 
   # Application name and type
-  ack "This application ${app} is" "$type"
-  indicate "Deployment target" ${remote}
+  ack "This application ${app} is" ${type}
+  ack "Deployment target" ${remote}
 
   indicate "Local deployment path" ${DEPLOY_PATH}
 
@@ -583,24 +583,26 @@ upgrade_db() {
     ack "Upcoming changes to the schema"
     UPDATES=`php ${RELEASE_PATH}/app/console doctrine:schema:update --dump-sql`
 
+    clear
     echo ${UPDATES}
-    
+    clear
+
     if ! [ "$UPDATES" = "Nothing to update - your database is already in sync with the current entity metadata." ]; then
 
-      clear
       yn=`ask "Do you wish to update the schema" "no"`
       case $yn in
           [Yy]* ) said_yes "Updating schema"
                   $ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  clear
+                  ack "Database updated !"
                   ;;
           * ) said_no ;;
       esac
+
     fi
 
   fi
 
-  clear
-  ack "Database updated !"
 
 }
 
@@ -611,6 +613,7 @@ link_full(){
   case $yn in
       [Yy]* ) said_yes "Linking"
               $ON_TARGET_DO ln -sfvn ${WWW_PATH} ${WWW_LINK}
+              clear
               notify_done ;;
        * ) said_no ;;
   esac
