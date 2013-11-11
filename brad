@@ -543,12 +543,14 @@ revert(){
 
   if ! [ "$LAST_PATH" = "${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/" ]; then
 
-    indicate "Rollback path" ${LAST_PATH}
+    clear
+    warn "Rollback path" ${LAST_PATH}
 
     yn=`ask "Are you sure you want to rollback (link)" "no"`
     case $yn in
         [Yy]* ) said_yes "Rollbacking"
                 $ON_TARGET_DO ln -sfvn ${LAST_PATH} ${WWW_LINK}
+                clear
                 notify_done ;;
          * ) said_no ;;
     esac
@@ -637,6 +639,7 @@ link_scalpel(){
   case $yn in
       [Yy]* ) said_yes "Linking"
               ln -sfvn ${SCALPEL_PATH} ${WWW_LINK}
+              clear
               notify_done ;;
        * ) said_no ;;
   esac
