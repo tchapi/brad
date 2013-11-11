@@ -587,7 +587,7 @@ upgrade_db() {
     echo ${UPDATES}
     clear
 
-    if ! [ "$UPDATES" = "Nothing to update - your database is already in sync with the current entity metadata." ]; then
+    if ! [[ "$UPDATES" = *Nothing to update* ]]; then
 
       yn=`ask "Do you wish to update the schema" "no"`
       case $yn in
