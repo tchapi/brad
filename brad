@@ -527,12 +527,14 @@ revert(){
 # Send the release folder to the frontal web server 
 transfer(){
 
+   $ON_TARGET_DO mkdir -p ${WWW_PATH}
+
   if [ ! "$ON_TARGET_DO" = "" ]; then
     # Remote
     rsync -a --del -e "ssh -p ${port}" ${RELEASE_PATH}/. ${user}@${host}:${WWW_PATH}
   else
     # Local
-    cp ${RELEASE_PATH}/. ${WWW_PATH}
+    cp -R ${RELEASE_PATH}/. ${WWW_PATH}
   fi
 
   # Warming up caches
