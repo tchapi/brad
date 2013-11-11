@@ -1,16 +1,20 @@
-# Deployment scripts from a remote Git server
+# Brad
+
+Build, release and deploy
+(_buid for Symfony 2 and Silex projects_)
+
 - - -
 
 Make easy atomic deployments from Github / Bitbucket, or any remote Git server.
 
-The package consists of one script : `deploy.sh`, and a configuration file : `deploy.conf`.
+The package consists of one script : `brad`, and a configuration file : `brad.conf`.
 It is based on the bootshtrap shell micro-library (see https://github.com/tchapi/bootshtrap).
 
-> NB : You will have to copy `deploy.conf.example` to `deploy.conf` for the scripts to work. You should as well make sure that `deploy.sh` is executable, or run `chmod +x deploy.sh` in case
+> NB : You will have to copy `brad.conf.example` to `brad.conf` for the scripts to work. You should as well make sure that `brad` is executable, or run `chmod +x brad` in case
 
 ## Initial configuration
 
-Before running anything, you have to configure your `APP_BASE_PATH` in the `deploy.conf` file. Just define the `APP_BASE_PATH` in this file like this :
+Before running anything, you have to configure your `APP_BASE_PATH` in the `brad.conf` file. Just define the `APP_BASE_PATH` in this file like this :
 
 ```bash
 APP_BASE_PATH='/var'
@@ -42,9 +46,11 @@ remote["app_1", "path"]
 
 _NB : Be sure to have **no** trailing slash at the end of your paths_
 
+> NB : if you run brad on a computer that does not have bash 4 required by `bootshtrap` or gnu_getopt, you can amend `bootshtrap.config` accordingly. See the bootshtrap documentation.
+
 ## Configurating for deployement
 
-Before a project can be initialized, you have to add it in the `deploy.conf` configuration file :
+Before a project can be initialized, you have to add it in the `brad.conf` configuration file :
 
 ```bash
 projects["app_1"]="standalone"
@@ -69,7 +75,7 @@ remote["app_1", "path"]="/home/webuser/sites"
 Once conf'ed, you can init a project with :
 
 ```bash
-$ ./deploy.sh --init git_repository my_new_app 
+$ ./brad --init git_repository my_new_app 
 ```
 
 .. where `my_new_app` will be the name of your application (the directories will be created ad hoc) and `git_repository` is the url of the related git repository.
@@ -131,7 +137,7 @@ Links (symbolic) to these folders are created respectively in `web/` and in `app
 Deploying an application is easy :
 
 ```bash
-$ ./deploy.sh my_app environment
+$ ./brad my_app environment
 ```
 
 ... where `my_app` (the first argument) is the name of the app previously initialized, and where environnement (second argument) can be one of :
@@ -144,7 +150,7 @@ $ ./deploy.sh my_app environment
 You can deploy a single file  :
 
 ```bash
-$ ./deploy.sh my_app environment [file1 file2 ... ]
+$ ./brad my_app environment [file1 file2 ... ]
 ```
 In this case, the previous production or staging release directory will be copied to a new release directory, and the file(s) will be replaced _in situ_ in this new directory.
 
@@ -153,11 +159,11 @@ In this case, the previous production or staging release directory will be copie
 If you haven't deleted the previous deployment directories, it is possible to rollback to a previous instance of your application. This only applies to the application itself and not to the database schema or sessions / uploads, for instance.
 
 ```bash
-$ ./deploy.sh --rollback my_app environment
+$ ./brad --rollback my_app environment
 ```
 or 
 ```bash
-$ ./deploy.sh -r my_app environment
+$ ./brad -r my_app environment
 ```
 
 > NB : As per the _getopt_ flavor, the options can be put anywhere in the command (after or before arguments).
@@ -171,12 +177,12 @@ This will link back the `www/prod` or `www/beta` folder to the previous instance
 When deploying often, you will probably clutter your `www`folder with previous unnecessary instances. You can perform a deployment with a final cleanup of the old ones with this simple command :
 
 ```bash
-$ ./deploy.sh --cleanup my_app environment
+$ ./brad --cleanup my_app environment
 ```
 or
 
 ```bash
-$ ./deploy.sh -c my_app environment
+$ ./brad -c my_app environment
 ```
 
 > NB : As per the _getopt_ flavor, the options can be put anywhere in the command (after or before arguments).
@@ -192,7 +198,7 @@ In order to facilitate deployment from a remote client (your computer for instan
 ```bash
 function deploy(){
 
-  ssh -t -t -t my.server.com -p 22  "/var/deploy/_script/deploy.sh $*"
+  ssh -t -t -t my.server.com -p 22  "/var/deploy/_script/brad $*"
 
 }
 ```

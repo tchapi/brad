@@ -33,7 +33,7 @@ INIT=0
 # Main entry point
 main(){
 
-  load_config_file "$(dirname $0)/deploy.conf"
+  load_config_file "$(dirname $0)/brad.conf"
 
   check_arguments "${@}"
 
