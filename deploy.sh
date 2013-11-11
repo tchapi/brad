@@ -60,14 +60,15 @@ main(){
 
   # Application name and type
   ack "This application ${app} is" "$type"
-
-  indicate "Deployment path" ${DEPLOY_PATH}
-  if [ ! "$INIT" = 1 ]; then
-    indicate "Release www path" ${RELEASE_PATH}
-    indicate "Live www path" ${WWW_PATH}
-  fi
   indicate "Deployment target" ${remote}
-  indicate "Live www link" ${WWW_LINK}
+
+  indicate "Local deployment path" ${DEPLOY_PATH}
+
+  if [ ! "$INIT" = 1 ]; then
+    indicate "Local release www path" ${RELEASE_PATH}
+    indicate "Live www path" ${WWW_PATH}
+    indicate "Live www link" ${WWW_LINK}
+  fi
 
   # Init or Deploy ?
   if [ "$INIT" = 1 ]; then
@@ -112,10 +113,12 @@ main(){
   
         header "Preparing ${env} environment for release"
         deploy
+
+        header "Releasing ${env} environment"
         release
         update_changelog 
 
-        header "Promoting ${env} environment now"
+        header "Transfering ${env} environment and promoting"
         transfer
         upgrade_db
         link_full
@@ -187,7 +190,7 @@ check_arguments(){
 
   if [ ! "${host-}" = "" ]; then
     remote="${user}@${host}:${port}"
-    ON_TARGET_DO="ssh -t -t -t ${user}@${host} -p ${port}"
+    ON_TARGET_DO="ssh -t -t -t -o LogLevel=QUIET ${user}@${host} -p ${port}"
     REMOTE_APP_BASE_PATH=${path}
   else
     remote="localhost"
@@ -527,35 +530,6 @@ update_changelog(){
 
 }
 
-upgrade_db() {
-
-  # Symfony 2 Stuff
-  if [ "$type" = "symfony2" ]; then
-
-    ack "Upcoming changes to the schema"
-    UPDATES=`php ${RELEASE_PATH}/app/console doctrine:schema:update --dump-sql`
-
-    clear
-    echo ${UPDATES}
-    
-    if ! [ "$UPDATES" = "Nothing to update - your database is already in sync with the current entity metadata." ]; then
-
-      yn=`ask "Do you wish to update the schema" "no"`
-      case $yn in
-          [Yy]* ) said_yes "Updating schema"
-                  $ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
-                  ;;
-          * ) said_no ;;
-      esac
-    fi
-
-  fi
-
-  clear
-  ack "Database updated !"
-
-}
-
 # Revert to a previous deployment folder
 revert(){
 
@@ -598,6 +572,35 @@ transfer(){
 
   # Ensure that cache, logs are writable
   $ON_TARGET_DO chmod -R 777 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
+
+}
+
+upgrade_db() {
+
+  # Symfony 2 Stuff
+  if [ "$type" = "symfony2" ]; then
+
+    ack "Upcoming changes to the schema"
+    UPDATES=`php ${RELEASE_PATH}/app/console doctrine:schema:update --dump-sql`
+
+    echo ${UPDATES}
+    
+    if ! [ "$UPDATES" = "Nothing to update - your database is already in sync with the current entity metadata." ]; then
+
+      clear
+      yn=`ask "Do you wish to update the schema" "no"`
+      case $yn in
+          [Yy]* ) said_yes "Updating schema"
+                  $ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  ;;
+          * ) said_no ;;
+      esac
+    fi
+
+  fi
+
+  clear
+  ack "Database updated !"
 
 }
 
