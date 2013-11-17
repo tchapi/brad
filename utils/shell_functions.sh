@@ -1,9 +1,15 @@
 SERVER='myserver.com'
 PORT=22
-SCRIPT_PATH='~/deploy.sh'
+SCRIPT_PATH='~/brad'
 
-function deploy(){
+function brad(){
 
   ssh -t -t -t ${SERVER} -p ${PORT}  "${SCRIPT_PATH} $*"
 
+}
+
+# On the remote server directly :
+
+function brad(){
+  ~/brad/brad "$@"
 }
