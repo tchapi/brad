@@ -612,6 +612,9 @@ install_crontabs(){
 
                 NEW_CRON=${AUTOMATED_KEYWORD_START//\\}$'\n'${CRONTABS}$'\n'${AUTOMATED_KEYWORD_END//\\}
 
+                # Replace the [ROOT]
+                NEW_CRON=${NEW_CRON//\[ROOT\]/$WWW_LINK}
+
                 # Replace the [CONSOLE]
                 if [ "$type" = "symfony2" ]; then
                   CONSOLE_PATH=${WWW_LINK}"/app/console"
