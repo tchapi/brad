@@ -140,7 +140,7 @@ main(){
 
 detect_php(){
 
-  type -P "hhvm" &>/dev/null && $PHP_VM="hhvm" || $PHP_VM="php"
+  type -P "hhvm" &>/dev/null && PHP_VM="hhvm" || PHP_VM="php"
 
 }
 
