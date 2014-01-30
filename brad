@@ -32,15 +32,16 @@ INIT=0
 
 # PHP Vitrual machine used
 PHP_VM="php"
+PHP_VM_REMOTE="php"
 
 # Main entry point
 main(){
 
-  detect_php
-
   load_config_file "$(dirname $0)/brad.conf"
 
   check_arguments "${@}"
+
+  detect_php
 
   date_today=`date '+%Y-%m-%d'`
   timestamp=`date '+%s'`
@@ -140,7 +141,11 @@ main(){
 
 detect_php(){
 
-  type -P "hhvm" &>/dev/null && PHP_VM="hhvm" || PHP_VM="php"
+  type -P "hhvm" &>/dev/null && PHP_VM="hhvm"
+  remote_php=$($ON_TARGET_DO type -P "hhvm" &>/dev/null)  
+  if [ ! "$remote_php" = ""]; then
+    PHP_VM_REMOTE="hhvm"
+  fi
 
 }
 
@@ -551,8 +556,8 @@ transfer(){
   if [ "$type" = "symfony2" ]; then
     # Warming up caches
     $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
-    #$ON_TARGET_DO $PHP_VM ${WWW_PATH}/app/console cache:warmup
-    $ON_TARGET_DO $PHP_VM ${WWW_PATH}/app/console cache:warmup --env=prod
+    #$ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:warmup
+    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:warmup --env=prod
 
     # Ensure that cache, logs are writable
     $ON_TARGET_DO chmod -R 777 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
@@ -568,7 +573,7 @@ upgrade_db() {
   if [ "$type" = "symfony2" ]; then
 
     ack "Upcoming changes to the schema"
-    UPDATES=`$ON_TARGET_DO $PHP_VM ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
+    UPDATES=`$ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
 
     clear
     echo ${UPDATES}
@@ -579,7 +584,7 @@ upgrade_db() {
       yn=`ask "Do you wish to update the schema" "no"`
       case $yn in
           [Yy]* ) said_yes "Updating schema"
-                  $ON_TARGET_DO $PHP_VM ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
                   clear
                   ack "Database updated !"
                   ;;
