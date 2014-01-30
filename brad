@@ -31,13 +31,13 @@ ROLLBACK=0
 INIT=0
 
 # PHP Vitrual machine used
-$PHP_VM="php"
+PHP_VM="php"
 
 # Main entry point
 main(){
 
   detect_php
-  
+
   load_config_file "$(dirname $0)/brad.conf"
 
   check_arguments "${@}"
