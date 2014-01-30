@@ -30,9 +30,14 @@ CLEANUP=0
 ROLLBACK=0
 INIT=0
 
+# PHP Vitrual machine used
+$PHP_VM="php"
+
 # Main entry point
 main(){
 
+  detect_php
+  
   load_config_file "$(dirname $0)/brad.conf"
 
   check_arguments "${@}"
@@ -130,6 +135,12 @@ main(){
   fi
   
   notify_done
+
+}
+
+detect_php(){
+
+  type -P "hhvm" &>/dev/null && $PHP_VM="hhvm" || $PHP_VM="php"
 
 }
 
@@ -249,9 +260,9 @@ init_repo(){
 
     if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
 
-      curl -S http://getcomposer.org/installer | php
-      php composer.phar self-update
-      php composer.phar install --prefer-dist
+      curl -S http://getcomposer.org/installer | $PHP_VM
+      $PHP_VM composer.phar self-update
+      $PHP_VM composer.phar install --prefer-dist
 
       # web/uploads for apache uploads
       if [ "$type" = "symfony2" ]; then
@@ -287,9 +298,9 @@ init_repo(){
 
   if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
 
-    curl -S http://getcomposer.org/installer | php
-    php composer.phar self-update
-    php composer.phar install --prefer-dist
+    curl -S http://getcomposer.org/installer | $PHP_VM
+    $PHP_VM composer.phar self-update
+    $PHP_VM composer.phar install --prefer-dist
 
     if [ "$type" = "symfony2" ]; then
       cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/web
@@ -369,7 +380,7 @@ build_js(){
     case $answer in
         [Yy]* ) said_yes "Building minified JS"
                 cd ${ADMIN_PATH}
-                php minify.php > ${DEPLOY_PATH}/js/min/${app}.min.js
+                $PHP_VM minify.php > ${DEPLOY_PATH}/js/min/${app}.min.js
                 indicate "Minified JS Path" ${DEPLOY_PATH}"/js/min/"${app}".min.js"
                 ;;
         * ) said_no ;;
@@ -392,8 +403,8 @@ deploy(){
     case $yn in
         [Ii]* ) said_yes "Installing vendors via Composer"
 
-                php composer.phar self-update
-                php composer.phar install
+                $PHP_VM composer.phar self-update
+                $PHP_VM composer.phar install
 
                 # Cleaning the mess since it is a deploy folder
                 if [ "$type" = "symfony2" ]; then
@@ -404,8 +415,8 @@ deploy(){
                 ;;
         [Uu]* ) said_yes "Updating vendors via Composer"
 
-                php composer.phar self-update
-                php composer.phar update
+                $PHP_VM composer.phar self-update
+                $PHP_VM composer.phar update
 
                 # Cleaning the mess since it is a deploy folder
                 if [ "$type" = "symfony2" ]; then
@@ -439,8 +450,8 @@ release(){
     cd ${RELEASE_PATH}
 
     # Dump assetic assets
-    php app/console assets:install web --symlink
-    php app/console assetic:dump --env=prod --no-debug
+    $PHP_VM app/console assets:install web --symlink
+    $PHP_VM app/console assetic:dump --env=prod --no-debug
  
   fi
 
@@ -540,8 +551,8 @@ transfer(){
   if [ "$type" = "symfony2" ]; then
     # Warming up caches
     $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
-    #$ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup
-    $ON_TARGET_DO php ${WWW_PATH}/app/console cache:warmup --env=prod
+    #$ON_TARGET_DO $PHP_VM ${WWW_PATH}/app/console cache:warmup
+    $ON_TARGET_DO $PHP_VM ${WWW_PATH}/app/console cache:warmup --env=prod
 
     # Ensure that cache, logs are writable
     $ON_TARGET_DO chmod -R 777 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
@@ -557,7 +568,7 @@ upgrade_db() {
   if [ "$type" = "symfony2" ]; then
 
     ack "Upcoming changes to the schema"
-    UPDATES=`$ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
+    UPDATES=`$ON_TARGET_DO $PHP_VM ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
 
     clear
     echo ${UPDATES}
@@ -568,7 +579,7 @@ upgrade_db() {
       yn=`ask "Do you wish to update the schema" "no"`
       case $yn in
           [Yy]* ) said_yes "Updating schema"
-                  $ON_TARGET_DO php ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  $ON_TARGET_DO $PHP_VM ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
                   clear
                   ack "Database updated !"
                   ;;
