@@ -52,6 +52,12 @@ main(){
   WWW_PATH=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/rel-'${env}'-'${date_today}"-"${timestamp}
   WWW_LINK=${REMOTE_APP_BASE_PATH}'/'${WWW_DIRECTORY}'/'${app}'/'${env}
 
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+    WWW_WEB_LINK=${WWW_LINK}/web
+  else
+    WWW_WEB_LINK=${WWW_LINK}
+  fi
+
   ADMIN_PATH=${DEPLOY_PATH}'/admin'
 
   if [ ! "$INIT" = 1 ]; then
@@ -103,8 +109,10 @@ main(){
     if [ "$ROLLBACK" = 1 ]; then
 
       header "Reverting ${env} environment"
-      revert
-      update_changelog 
+      lock_maintenance   # v
+      revert             # |
+      unlock_maintenance # ^
+      update_changelog
 
     else
 
@@ -120,9 +128,11 @@ main(){
       update_changelog 
 
       header "Transfering ${env} environment and promoting"
-      transfer
-      upgrade_db
-      link_full
+      lock_maintenance   # v
+      transfer           # |
+      upgrade_db         # |
+      link_full          # |
+      unlock_maintenance # ^
 
       if [ "$CLEANUP" = 1 ]; then cleanup; fi
 
@@ -372,6 +382,36 @@ git_pull(){
   # Amend the deployed path
   RELEASE_PATH=${RELEASE_PATH}"-"${revision_safe}
   WWW_PATH=${WWW_PATH}"-"${revision_safe}
+
+}
+
+# Set maintenance mode if any (exists a file maintenance.off.html --> maintenance.html)
+lock_maintenance(){
+
+  if [ -e ${WWW_WEB_LINK}"/maintenance.off.html" ]; then
+    answer=`ask "Do you wish to lock in maintenance mode" "no"`
+    case $answer in
+        [Yy]* ) said_yes "Setting maintenance mode"
+                $ON_TARGET_DO mv ${WWW_WEB_LINK}/maintenance.off.html ${WWW_WEB_LINK}/maintenance.html
+                notify_done
+                ;;
+        * ) said_no ;;
+    esac
+  fi
+
+}
+unlock_maintenance(){
+
+  if [ -e ${WWW_WEB_LINK}"/maintenance.html" ]; then
+    answer=`ask "Do you wish to unlock from maintenance mode" "no"`
+    case $answer in
+        [Yy]* ) said_yes "Unlocking from maintenance mode"
+                $ON_TARGET_DO mv ${WWW_WEB_LINK}/maintenance.html ${WWW_WEB_LINK}/maintenance.off.html
+                notify_done
+                ;;
+        * ) said_no ;;
+    esac
+  fi
 
 }
 
