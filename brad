@@ -240,6 +240,7 @@ init_repo(){
 
   # We create a dir for the app if it doesn't already exist
   mkdir -p ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/$app
+  $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}
 
   # Check the existence of branches
   HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
