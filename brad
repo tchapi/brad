@@ -152,7 +152,7 @@ main(){
 detect_php(){
 
   type -P "hhvm" &>/dev/null && PHP_VM="hhvm"
-  remote_php=$($ON_TARGET_DO type -P "hhvm")  
+  remote_php=`$ON_TARGET_DO type -P "hhvm" || echo ""` 
   if [ ! "$remote_php" = "" ]; then
     PHP_VM_REMOTE="hhvm"
   fi
