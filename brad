@@ -132,7 +132,7 @@ main(){
       transfer           # |
       upgrade_db         # |
       link_full          # |
-      unlock_maintenance # ^
+      unlock_maintenance # ^  It should unlock by itself (with link_full overwrite), but in case ...
 
       if [ "$CLEANUP" = 1 ]; then cleanup; fi
 
@@ -283,7 +283,7 @@ init_repo(){
       # web/uploads for apache uploads
       if [ "$type" = "symfony2" ]; then
         cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/web
-        ln -s ../../uploads uploads
+        ln -s ../../uploads/${STAGING_DIRECTORY} uploads
 
         # var/sessions for sessions storage
         cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/app
@@ -320,11 +320,11 @@ init_repo(){
 
     if [ "$type" = "symfony2" ]; then
       cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/web
-      ln -s ../../uploads uploads
+      ln -s ../../uploads/${LIVE_DIRECTORY} uploads
 
       # var/sessions for sessions storage
       cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/app
-      ln -s ../../var/prod var
+      ln -s ../../var/${LIVE_DIRECTORY} var
 
     fi
 
