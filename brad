@@ -122,6 +122,7 @@ main(){
 
       header "Preparing ${env} environment for release"
       deploy
+      bump_version
 
       header "Releasing ${env} environment"
       release
@@ -265,6 +266,9 @@ init_repo(){
   # Installing STAGING deployed environment
   if [ "$HAS_STAGING" -gt 0 ]; then
 
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
+
     cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
     mkdir ${STAGING_DIRECTORY}
 
@@ -303,6 +307,9 @@ init_repo(){
 
   fi
 
+  $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
+  $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
+    
   # Installing PROD deployed environment
   cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
   mkdir ${LIVE_DIRECTORY}
@@ -412,6 +419,15 @@ unlock_maintenance(){
                 ;;
         * ) said_no ;;
     esac
+  fi
+
+}
+
+bump_version(){
+
+  if [ "$type" = "symfony2" ]; then
+    $PHP_VM app/console version:bump --force || echo "No command available for version bumping."
+    ack "Version bumped."
   fi
 
 }
