@@ -570,7 +570,7 @@ update_changelog(){
     echo "&&" >> ${CHANGELOG_PATH}
     echo "" >> ${CHANGELOG_PATH}
 
-    ten_last =`git log -n10 --pretty=format:'%h <%aE> %d %s | %cD' --abbrev-commit`
+    ten_last=`git log -n10 --pretty=format:'%h <%aE> %d %s | %cD' --abbrev-commit`
     echo "${ten_last}" >> ${CHANGELOG_PATH}
     
     echo "" >> ${CHANGELOG_PATH}
