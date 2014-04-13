@@ -378,6 +378,7 @@ git_pull(){
   ack "Checking out remote branch from origin"
   clear
   echo `git reset --hard HEAD`
+  echo `git fetch --tags`
   echo `git pull origin`
   echo `git status`
   clear
@@ -557,6 +558,23 @@ update_changelog(){
 
     current_date=`git log -1 --format="%ad"`
     echo "# Last update : ${current_date}" >> ${CHANGELOG_PATH}
+    
+    echo "" >> ${CHANGELOG_PATH}
+    echo "--" >> ${CHANGELOG_PATH}
+    echo "" >> ${CHANGELOG_PATH}
+
+    last_modifs=`git diff HEAD^ HEAD --summary --stat`
+    echo "${last_modifs}" >> ${CHANGELOG_PATH}
+    
+    echo "" >> ${CHANGELOG_PATH}
+    echo "&&" >> ${CHANGELOG_PATH}
+    echo "" >> ${CHANGELOG_PATH}
+
+    ten_last =`git log -n10 --pretty=format:'%h <%aE> %d %s | %cD' --abbrev-commit`
+    echo "${ten_last}" >> ${CHANGELOG_PATH}
+    
+    echo "" >> ${CHANGELOG_PATH}
+    echo "##" >> ${CHANGELOG_PATH}
     echo "" >> ${CHANGELOG_PATH}
 
     change_log=`git log --no-merges --date-order --date=rfc | \
