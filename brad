@@ -276,6 +276,11 @@ init_repo(){
     if [ ! "$type" = "ghost" ]; then
       $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
       $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
+    else
+      $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data/${STAGING_DIRECTORY}
+      $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data/${STAGING_DIRECTORY}
+      $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images/${STAGING_DIRECTORY}
+      $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images/${STAGING_DIRECTORY}
     fi
 
     cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
@@ -306,10 +311,12 @@ init_repo(){
     elif [ "$type" = "ghost" ]; then
       # content/data for db
       cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content
+      rm -fR ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content/data 
       ln -s ../../data/${STAGING_DIRECTORY} data
 
       # content/images for images storage
       cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content
+      rm -fR ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content/images 
       ln -s ../../images/${STAGING_DIRECTORY} images
     fi
 
@@ -326,6 +333,11 @@ init_repo(){
   if [ ! "$type" = "ghost" ]; then
     $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
     $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
+  else
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data/${LIVE_DIRECTORY}
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data/${LIVE_DIRECTORY}
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images/${LIVE_DIRECTORY}
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images/${LIVE_DIRECTORY}
   fi
 
   # Installing PROD deployed environment
@@ -354,10 +366,12 @@ init_repo(){
 
   elif [ "$type" = "ghost" ]; then
     cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content
+    rm -fR ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content/data 
     ln -s ../../data/${LIVE_DIRECTORY} data
 
     # content/images for images storage
     cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content
+    rm -fR ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content/images 
     ln -s ../../images/${LIVE_DIRECTORY} images
   fi
 
@@ -375,8 +389,10 @@ init_repo(){
   ack "Created environnements :"
   indicate "Remote repository" ${GIT_URL}
 
-  indicate "Staging Deployment path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}
-  indicate " --> tracking branch" ${STAGING_BRANCH}
+  if [ "$HAS_STAGING" -gt 0 ]; then
+    indicate "Staging Deployment path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}
+    indicate " --> tracking branch" ${STAGING_BRANCH}
+  fi
 
   indicate "Live Deployment path" ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}
   indicate " --> tracking branch " ${LIVE_BRANCH}
