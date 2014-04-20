@@ -57,7 +57,9 @@ projects["app_1"]="standalone"
 projects["my_symfony2_app"]="symfony2"
 ```          
 
-`standalone` references a standard project, whereas `symfony2` (or `silex`) explicitely references a project that is based on the Symfony2 (or Silex) framework. This is used when initing and deploying to accomplish tasks such as cache warmup, schema update, etc ...
+`standalone` references a standard project, whereas `symfony2` (or `silex`) explicitely references a project that is based on the Symfony2 (or Silex) framework. 
+`ghost` references a project that uses node.js and the [ghost](ghost.org) blogging framework.
+This is used when initing and deploying to accomplish tasks such as cache warmup, schema update, etc ...
 
 If a project is to be deployed on a remote target, you should add the relevant information for connecting to the server :
 

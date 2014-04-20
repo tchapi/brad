@@ -41,7 +41,9 @@ main(){
 
   check_arguments "${@}"
 
-  detect_php
+  if [ ! "$type" = "ghost" ]; then
+    detect_php
+  fi
 
   date_today=`date '+%Y-%m-%d'`
   timestamp=`date '+%s'`
@@ -141,7 +143,7 @@ main(){
 
     fi
     
-    restart_apache
+    restart_apache_nginx
 
     # ---- END : DEPLOY ----
   fi
@@ -261,13 +263,20 @@ init_repo(){
     $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/var
     $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
     $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads
+  elif [ "$type" = "ghost" ]; then
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data  
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images
   fi
 
   # Installing STAGING deployed environment
   if [ "$HAS_STAGING" -gt 0 ]; then
 
-    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
-    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
+    if [ ! "$type" = "ghost" ]; then
+      $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
+      $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
+    fi
 
     cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
     mkdir ${STAGING_DIRECTORY}
@@ -284,17 +293,24 @@ init_repo(){
       $PHP_VM composer.phar self-update
       $PHP_VM composer.phar install --prefer-dist
 
+    fi
+
+    if [ "$type" = "symfony2" ]; then
       # web/uploads for apache uploads
-      if [ "$type" = "symfony2" ]; then
-        cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/web
-        ln -s ../../uploads/${STAGING_DIRECTORY} uploads
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/web
+      ln -s ../../uploads/${STAGING_DIRECTORY} uploads
 
-        # var/sessions for sessions storage
-        cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/app
-        ln -s ../../var/${STAGING_DIRECTORY} var
+      # var/sessions for sessions storage
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/app
+      ln -s ../../var/${STAGING_DIRECTORY} var
+    elif [ "$type" = "ghost" ]; then
+      # content/data for db
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content
+      ln -s ../../data/${STAGING_DIRECTORY} data
 
-      fi
-
+      # content/images for images storage
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content
+      ln -s ../../images/${STAGING_DIRECTORY} images
     fi
 
     # Session folder
@@ -307,9 +323,11 @@ init_repo(){
 
   fi
 
-  $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
-  $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
-    
+  if [ ! "$type" = "ghost" ]; then
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
+  fi
+
   # Installing PROD deployed environment
   cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
   mkdir ${LIVE_DIRECTORY}
@@ -324,17 +342,23 @@ init_repo(){
     curl -S http://getcomposer.org/installer | $PHP_VM
     $PHP_VM composer.phar self-update
     $PHP_VM composer.phar install --prefer-dist
+  fi
 
-    if [ "$type" = "symfony2" ]; then
-      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/web
-      ln -s ../../uploads/${LIVE_DIRECTORY} uploads
+  if [ "$type" = "symfony2" ]; then
+    cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/web
+    ln -s ../../uploads/${LIVE_DIRECTORY} uploads
 
-      # var/sessions for sessions storage
-      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/app
-      ln -s ../../var/${LIVE_DIRECTORY} var
+    # var/sessions for sessions storage
+    cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/app
+    ln -s ../../var/${LIVE_DIRECTORY} var
 
-    fi
+  elif [ "$type" = "ghost" ]; then
+    cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content
+    ln -s ../../data/${LIVE_DIRECTORY} data
 
+    # content/images for images storage
+    cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content
+    ln -s ../../images/${LIVE_DIRECTORY} images
   fi
 
   # Session folder
@@ -515,7 +539,12 @@ release(){
     # Dump assetic assets
     $PHP_VM app/console assets:install web --symlink
     $PHP_VM app/console assetic:dump --env=prod --no-debug
- 
+
+  elif [ "$type" = "ghost" ]; then
+    #statements for node.js
+    # get npm ??    curl -L https://npmjs.org/install.sh | sh
+    npm install --production
+    # grunt prod ???
   fi
 
   clear
@@ -538,6 +567,8 @@ update_changelog(){
   if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
   elif [ "$type" = "standalone" ]; then
+    CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
+  elif [ "$type" = "ghost" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
   fi
 
@@ -775,17 +806,29 @@ cleanup(){
 }
 
 
-# Restart Apache
-restart_apache(){
+# Restart Apache or Nginx
+restart_apache_nginx(){
 
-  # Restart Apache
-  res=`ask "Do you wish to restart Apache 2" "no"`
-  case $res in
-      [Yy]* ) said_yes "Restarting Apache"
-              $ON_TARGET_DO sudo /root/apachereload.sh
-              ;;
-      * ) said_no ;;
-  esac
+  if [ ! -x /usr/sbin/nginx ]; then
+    # Restart Apache
+    res=`ask "Do you wish to restart Apache" "no"`
+    case $res in
+        [Yy]* ) said_yes "Restarting Apache"
+                $ON_TARGET_DO sudo /root/apachereload.sh #sudo service apache2 restart
+                ;;
+        * ) said_no ;;
+    esac
+  else
+    # Restart Nginx
+    res=`ask "Do you wish to restart Nginx" "no"`
+    case $res in
+        [Yy]* ) said_yes "Restarting Nginx"
+                $ON_TARGET_DO sudo service nginx restart
+                ;;
+        * ) said_no ;;
+    esac
+  fi
+  
 
 }
 
