@@ -809,8 +809,8 @@ cleanup(){
 # Restart Apache or Nginx
 restart_apache_nginx(){
 
-  ng=`$ON_TARGET_DO which nginx`
-  if [ ! "$ng" = "/usr/sbin/nginx" ]; then
+  ng=`$ON_TARGET_DO type -P "nginx" || echo ""` 
+  if [ ! "$ng" = "" ]; then
     # Restart Apache
     res=`ask "Do you wish to restart Apache" "no"`
     case $res in
