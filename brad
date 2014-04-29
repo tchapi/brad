@@ -557,10 +557,16 @@ release(){
     $PHP_VM app/console assetic:dump --env=prod --no-debug
 
   elif [ "$type" = "ghost" ]; then
-    #statements for node.js
-    # get npm ??    curl -L https://npmjs.org/install.sh | sh
-    npm install --production
-    # grunt prod ???
+
+    cd ${RELEASE_PATH}
+
+    # Install dependencies
+    npm install --loglevel warn
+
+    # Creates the javascripts and stuff
+    # We have created a "deploy" script in package.json, that calls the locally installed Grunt with ./node_modules/.bin/grunt deploy
+    npm run-script deploy
+
   fi
 
   clear
