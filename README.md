@@ -1,7 +1,7 @@
 # Brad
 
 Build, release and deploy
-(_built for standalone, Symfony 2 and Silex projects_)
+(_built for standalone, Symfony 2 and Silex projects, and Ghost blogs_)
 
 - - -
 
@@ -57,8 +57,10 @@ projects["app_1"]="standalone"
 projects["my_symfony2_app"]="symfony2"
 ```          
 
-`standalone` references a standard project, whereas `symfony2` (or `silex`) explicitely references a project that is based on the Symfony2 (or Silex) framework. 
-`ghost` references a project that uses node.js and the [ghost](ghost.org) blogging framework.
+  - `standalone` references a standard project.
+  - `symfony2` (or `silex`) explicitely references a project that is based on the [Symfony2](http://symfony.com) (or Silex) framework. 
+  - `ghost` references a project that uses node.js and the [ghost](ghost.org) blogging framework.
+
 This is used when initing and deploying to accomplish tasks such as cache warmup, schema update, etc ...
 
 If a project is to be deployed on a remote target, you should add the relevant information for connecting to the server :
@@ -133,6 +135,13 @@ In the case of a Symfony 2 project (_automatically detected with the existence o
   - `var/sessions` (_to store the user sessions — this allows to separate the cache from the sessions and deploy without logging out all the users if configured in the Symfony 2 application_)
 
 Links (symbolic) to these folders are created respectively in `web/` and in `app/` of your Symfony2 application.
+
+In the case of a Ghost blog, two folders are created as well :
+
+  - `data` (_to store the db - this allows to persist the sqlite db accross deployments_)
+  - `images` (_to store the user uploaded media — this allows to persist the uploaded images accross deployments_)
+
+Links (symbolic) to these folders are created in `content/` in your ghost blog.
 
 ## Deploying a project
 

@@ -30,7 +30,7 @@ CLEANUP=0
 ROLLBACK=0
 INIT=0
 
-# PHP Vitrual machine used
+# PHP Virtual machine used
 PHP_VM="php"
 PHP_VM_REMOTE="php"
 
@@ -143,9 +143,9 @@ main(){
 
     fi
     
-    if [ ! "$type" = "ghost" ]; then
-      restart_apache_nginx
-    fi
+    restart_ghost_app    
+    restart_hhvm  
+    restart_apache_nginx
 
     # ---- END : DEPLOY ----
   fi
@@ -833,30 +833,64 @@ cleanup(){
 # Restart Apache or Nginx
 restart_apache_nginx(){
 
-  ng=`$ON_TARGET_DO type -P "nginx" || echo ""` 
-  if [ ! "$ng" = "" ]; then
-    # Restart Apache
-    res=`ask "Do you wish to restart Apache" "no"`
+  if [ ! "$type" = "ghost" ]; then # Not really exactly true since we might want to restart nginx, but it's less common
+      
+    ng=`$ON_TARGET_DO type -P "nginx" || echo ""` 
+    if [ ! "$ng" = "" ]; then
+      # Restart Apache
+      res=`ask "Do you wish to restart Apache" "no"`
+      case $res in
+          [Yy]* ) said_yes "Restarting Apache"
+                  $ON_TARGET_DO sudo /root/apachereload.sh #sudo service apache2 restart
+                  ;;
+          * ) said_no ;;
+      esac
+    else
+      # Restart Nginx
+      res=`ask "Do you wish to restart Nginx" "no"`
+      case $res in
+          [Yy]* ) said_yes "Restarting Nginx"
+                  $ON_TARGET_DO sudo service nginx restart
+                  ;;
+          * ) said_no ;;
+      esac
+    fi
+
+  fi
+  
+}
+
+# Restart the ghost blog app in supervisor
+restart_ghost_app(){
+
+  if [ "$type" = "ghost" ]; then
+    # Restart the app in supervisorctl
+    res=`ask "Do you wish to restart $app" "no"`
     case $res in
-        [Yy]* ) said_yes "Restarting Apache"
-                $ON_TARGET_DO sudo /root/apachereload.sh #sudo service apache2 restart
-                ;;
-        * ) said_no ;;
-    esac
-  else
-    # Restart Nginx
-    res=`ask "Do you wish to restart Nginx" "no"`
-    case $res in
-        [Yy]* ) said_yes "Restarting Nginx"
-                $ON_TARGET_DO sudo service nginx restart
+        [Yy]* ) said_yes "Restarting $app via supervisorctl"
+                $ON_TARGET_DO sudo supervisorctl restart ${app}
                 ;;
         * ) said_no ;;
     esac
   fi
   
-
 }
 
+# Restart HHVM in supervisor
+restart_hhvm(){
+
+  if [ "$PHP_VM_REMOTE" = "hhvm" ]; then
+    # Restart HHVM through supervisorctl
+    res=`ask "Do you wish to restart HHVM" "no"`
+    case $res in
+        [Yy]* ) said_yes "Restarting HHVM via supervisorctl"
+                $ON_TARGET_DO sudo supervisorctl restart hhvm
+                ;;
+        * ) said_no ;;
+    esac
+  fi
+  
+}
 
 # Runs the application
 run
