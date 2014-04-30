@@ -143,7 +143,9 @@ main(){
 
     fi
     
-    restart_apache_nginx
+    if [ ! "$type" = "ghost" ]; then
+      restart_apache_nginx
+    fi
 
     # ---- END : DEPLOY ----
   fi
