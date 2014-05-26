@@ -256,7 +256,7 @@ log_action(){
     action="deploy"
   fi
 
-  echo "`/bin/date '+%Y-%m-%dT%H:%M:%S'` $app $env $(whoami)@$action: $1" >> "$LOG_DIRECTORY/brad.log"
+  echo "`/bin/date '+%Y-%m-%dT%H:%M:%S'` $(hostname) $action[$app@$env] : ($(whoami)) $1" >> "$LOG_DIRECTORY/brad.log"
 
 }
 
