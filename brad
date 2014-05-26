@@ -34,13 +34,14 @@ INIT=0
 PHP_VM="php"
 PHP_VM_REMOTE="php"
 
-# Create log directory if it doesn't exist
-mkdir -p "$LOG_DIRECTORY"
+# Loads the config
+load_config_file "$(dirname $0)/brad.conf"
 
 # Main entry point
 main(){
 
-  load_config_file "$(dirname $0)/brad.conf"
+  # Create log directory if it doesn't exist
+  mkdir -p "$LOG_DIRECTORY"
 
   check_arguments "${@}"
 
@@ -254,8 +255,8 @@ log(){
   else
     action="deploy"
   fi
-
-  echo "`/bin/date "+%Y.%m.%d.%H.%M.%S"` $app $env $(whoami)@$action: $1" >> "$LOG_DIRECTORY"/brad.conf 
+  
+  echo "`/bin/date '+%Y.%m.%d.%H.%M.%S'` $app $env $(whoami)@$action: $1" >> "$LOG_DIRECTORY/brad.log"
 
 }
 
