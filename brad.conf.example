@@ -1,5 +1,6 @@
 # The base path for your deployment folder :
 APP_BASE_PATH='/home/user'
+LOG_DIRECTORY='/var/log/brad'
 
 # Indicate an array of project here, for example :
 projects["my_project"]="standalone" # Can be "symfony2" or "silex" as well, for now

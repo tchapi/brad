@@ -34,12 +34,17 @@ INIT=0
 PHP_VM="php"
 PHP_VM_REMOTE="php"
 
+# Create log directory if it doesn't exist
+mkdir -p "$LOG_DIRECTORY"
+
 # Main entry point
 main(){
 
   load_config_file "$(dirname $0)/brad.conf"
 
   check_arguments "${@}"
+
+  log "Starting Brad"
 
   if [ ! "$type" = "ghost" ]; then
     detect_php
@@ -103,6 +108,7 @@ main(){
     fi
 
     init_repo
+    log "Application inited"
 
     # ---- END : INIT ----
   else
@@ -111,10 +117,12 @@ main(){
     if [ "$ROLLBACK" = 1 ]; then
 
       header "Reverting ${env} environment"
+      log "Rollbacking application ..."
       lock_maintenance   # v
       revert             # |
       unlock_maintenance # ^
       update_changelog
+      log "Application rollbacked"
 
     else
 
@@ -125,10 +133,12 @@ main(){
       header "Preparing ${env} environment for release"
       deploy
       bump_version
+      log "Application deployed"
 
       header "Releasing ${env} environment"
       release
       update_changelog 
+      log "Application released"
 
       header "Transfering ${env} environment and promoting"
       lock_maintenance   # v
@@ -136,6 +146,7 @@ main(){
       upgrade_db         # |
       link_full          # |
       unlock_maintenance # ^  It should unlock by itself (with link_full overwrite), but in case ...
+      log "Application promoted"
 
       if [ "$CLEANUP" = 1 ]; then cleanup; fi
 
@@ -151,6 +162,7 @@ main(){
   fi
   
   notify_done
+  log "Exiting Brad"
 
 }
 
@@ -233,6 +245,18 @@ set_init_flag(){
 }
 set_rollback_flag(){ 
   ROLLBACK=1
+}
+
+log(){
+
+  if [ "$INIT" = 1 ]; then
+    action="init"
+  else
+    action="deploy"
+  fi
+
+  echo "`/bin/date "+%Y.%m.%d.%H.%M.%S"` $app $env $(whoami)@$action: $1" >> "$LOG_DIRECTORY"/brad.conf 
+
 }
 
 init_repo(){
@@ -690,7 +714,8 @@ transfer(){
     $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:warmup --env=prod
 
     # Ensure that cache, logs are writable
-    $ON_TARGET_DO chmod -R 777 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
+    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
+    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
   fi
   
   clear
