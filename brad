@@ -45,7 +45,7 @@ main(){
 
   check_arguments "${@}"
 
-  log "Starting Brad"
+  log_action "Starting Brad"
 
   if [ ! "$type" = "ghost" ]; then
     detect_php
@@ -109,7 +109,7 @@ main(){
     fi
 
     init_repo
-    log "Application inited"
+    log_action "Application inited"
 
     # ---- END : INIT ----
   else
@@ -118,12 +118,12 @@ main(){
     if [ "$ROLLBACK" = 1 ]; then
 
       header "Reverting ${env} environment"
-      log "Rollbacking application ..."
+      log_action "Rollbacking application ..."
       lock_maintenance   # v
       revert             # |
       unlock_maintenance # ^
       update_changelog
-      log "Application rollbacked"
+      log_action "Application rollbacked"
 
     else
 
@@ -134,12 +134,12 @@ main(){
       header "Preparing ${env} environment for release"
       deploy
       bump_version
-      log "Application deployed"
+      log_action "Application deployed"
 
       header "Releasing ${env} environment"
       release
       update_changelog 
-      log "Application released"
+      log_action "Application released"
 
       header "Transfering ${env} environment and promoting"
       lock_maintenance   # v
@@ -147,7 +147,7 @@ main(){
       upgrade_db         # |
       link_full          # |
       unlock_maintenance # ^  It should unlock by itself (with link_full overwrite), but in case ...
-      log "Application promoted"
+      log_action "Application promoted"
 
       if [ "$CLEANUP" = 1 ]; then cleanup; fi
 
@@ -163,7 +163,7 @@ main(){
   fi
   
   notify_done
-  log "Exiting Brad"
+  log_action "Exiting Brad"
 
 }
 
@@ -248,15 +248,15 @@ set_rollback_flag(){
   ROLLBACK=1
 }
 
-log(){
+log_action(){
 
   if [ "$INIT" = 1 ]; then
     action="init"
   else
     action="deploy"
   fi
-  
-  echo "`/bin/date '+%Y.%m.%d.%H.%M.%S'` $app $env $(whoami)@$action: $1" >> "$LOG_DIRECTORY/brad.log"
+
+  echo "`/bin/date '+%Y-%m-%dT%H:%M:%S'` $app $env $(whoami)@$action: $1" >> "$LOG_DIRECTORY/brad.log"
 
 }
 
