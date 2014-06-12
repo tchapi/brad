@@ -716,7 +716,7 @@ transfer(){
 
     # Ensure that cache, logs are writable
     $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
-    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
+    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/app/cache/*
   fi
   
   clear
