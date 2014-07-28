@@ -567,12 +567,8 @@ release(){
 
   # Copy all files to the destination folder
   mkdir -p ${RELEASE_PATH}
-
-  if [ -f "${DEPLOY_PATH}/exclude.rsync" ]; then
-    rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude.rsync"
-  else
-    rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/.
-  fi
+  
+  rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/.
 
   # Symfony 2 Stuff
   if [ "$type" = "symfony2" ]; then
@@ -702,10 +698,18 @@ transfer(){
 
   if [ ! "$ON_TARGET_DO" = "" ]; then
     # Remote
-    rsync -a --del -e "ssh -p ${port}" ${RELEASE_PATH}/. ${user}@${host}:${WWW_PATH}
+    if [ -f "${DEPLOY_PATH}/exclude.rsync" ]; then
+      rsync -a --del -e "ssh -p ${port}" ${RELEASE_PATH}/. ${user}@${host}:${WWW_PATH} --exclude-from "${RELEASE_PATH}/exclude.rsync"
+    else
+      rsync -a --del -e "ssh -p ${port}" ${RELEASE_PATH}/. ${user}@${host}:${WWW_PATH}
+    fi
   else
     # Local
-    cp -R ${RELEASE_PATH}/. ${WWW_PATH}
+    if [ -f "${DEPLOY_PATH}/exclude.rsync" ]; then
+      rsync -rlpt ${RELEASE_PATH}/. ${WWW_PATH} --exclude-from "${RELEASE_PATH}/exclude.rsync"
+    else
+      rsync -rlpt ${RELEASE_PATH}/. ${WWW_PATH}
+    fi
   fi
 
   if [ "$type" = "symfony2" ]; then
