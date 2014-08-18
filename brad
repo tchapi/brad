@@ -585,10 +585,11 @@ release(){
 
     # Install dependencies
     npm install --loglevel warn
+    npm install --production
 
-    # Creates the javascripts and stuff
-    # We have created a "deploy" script in package.json, that calls the locally installed Grunt with ./node_modules/.bin/grunt deploy
-    npm run-script deploy
+    # Creates the javascripts and stuff, with grunt.
+    ./node_modules/.bin/grunt init
+    ./node_modules/.bin/grunt prod
 
   fi
 
