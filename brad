@@ -577,7 +577,7 @@ release(){
 
     # Dump assetic assets
     $PHP_VM app/console assets:install web --symlink
-    $PHP_VM app/console assetic:dump --env=prod --no-debug
+    $PHP_VM app/console assetic:dump -v --env=prod --no-debug
 
   elif [ "$type" = "ghost" ]; then
 
