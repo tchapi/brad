@@ -380,7 +380,7 @@ init_repo(){
 
     curl -S http://getcomposer.org/installer | $PHP_VM
     $PHP_VM composer.phar self-update
-    $PHP_VM composer.phar install --prefer-dist --no-scripts
+    $PHP_VM composer.phar install --prefer-dist
   fi
 
   if [ "$type" = "symfony2" ]; then
