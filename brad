@@ -295,6 +295,8 @@ init_repo(){
     $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data
     $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images
     $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/apps
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/apps
   fi
 
   # Installing STAGING deployed environment
@@ -308,6 +310,8 @@ init_repo(){
       $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data/${STAGING_DIRECTORY}
       $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images/${STAGING_DIRECTORY}
       $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images/${STAGING_DIRECTORY}
+      $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/apps/${STAGING_DIRECTORY}
+      $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/apps/${STAGING_DIRECTORY}
     fi
 
     cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}
@@ -345,6 +349,11 @@ init_repo(){
       cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content
       rm -fR ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content/images 
       ln -s ../../images/${STAGING_DIRECTORY} images
+
+      # content/apps for apps storage
+      cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content
+      rm -fR ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${STAGING_DIRECTORY}/content/apps 
+      ln -s ../../apps/${STAGING_DIRECTORY} apps
     fi
 
     # Session folder
@@ -365,6 +374,8 @@ init_repo(){
     $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/data/${LIVE_DIRECTORY}
     $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images/${LIVE_DIRECTORY}
     $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/images/${LIVE_DIRECTORY}
+    $ON_TARGET_DO mkdir -p ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/apps/${LIVE_DIRECTORY}
+    $ON_TARGET_DO chmod 775 ${REMOTE_APP_BASE_PATH}/${WWW_DIRECTORY}/${app}/apps/${LIVE_DIRECTORY}
   fi
 
   # Installing PROD deployed environment
@@ -400,6 +411,11 @@ init_repo(){
     cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content
     rm -fR ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content/images 
     ln -s ../../images/${LIVE_DIRECTORY} images
+
+    # content/apps for apps storage
+    cd ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content
+    rm -fR ${APP_BASE_PATH}/${DEPLOY_DIRECTORY}/${app}/${LIVE_DIRECTORY}/content/apps 
+    ln -s ../../apps/${LIVE_DIRECTORY} apps
   fi
 
   # Session folder
