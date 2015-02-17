@@ -14,26 +14,27 @@ It is based on the bootshtrap shell micro-library (see https://github.com/tchapi
 
 ## Initial configuration
 
-Before running anything, you have to configure your `APP_BASE_PATH` in the `brad.conf` file. Just define the `APP_BASE_PATH` in this file like this :
+Before running anything, you have to configure your `APPS_BASE_PATH` and `APPS_WEB_PATH` in the `brad.conf` file. Just define the `APPS_BASE_PATH` and `APPS_WEB_PATH` in this file like this :
 
 ```bash
-APP_BASE_PATH='/var'
+APPS_BASE_PATH='/home/user'
+APPS_WEB_PATH='/var/www'
 ```
 
 This will be the root directory where the deployments will take place. This directory should not be served directly by your webserver, since the resulting directory structure will be :
 
 ```
-APP_BASE_PATH
+APPS_BASE_PATH
   |-- deploy
   `-- release
 ```
 
 `release` and `deploy` are directories that should not be served by your webserver.
 
-If your applications are to be served from the same server, the path will also have :
+If your applications are to be served **from the same server**, the path will also have :
 
 ```
-APP_BASE_PATH
+APPS_WEB_PATH
   `-- wwww
 ```
 

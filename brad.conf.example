@@ -1,5 +1,6 @@
 # The base path for your deployment folder :
-APP_BASE_PATH='/home/user'
+APPS_BASE_PATH='/home/user'
+APPS_WEB_PATH='/var'
 LOG_DIRECTORY='/var/log/brad'
 
 # Indicate an array of project here, for example :
