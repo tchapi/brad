@@ -95,6 +95,15 @@ main(){
     indicate "Live www link" ${WWW_LINK}
   fi
 
+  answer=`ask "Are you sure you want to continue" "no"`
+  case $answer in
+      [Yy]* ) said_yes "Let's go !" ;;
+      * ) said_no 
+          notify_error "Aborted by user"
+          error_exit
+          ;;
+  esac
+
   # Init or Deploy ?
   if [ "$INIT" = 1 ]; then
     # ---- INIT ----
