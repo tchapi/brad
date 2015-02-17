@@ -1,7 +1,7 @@
 # Brad
 
 Build, release and deploy
-(_built for standalone, Symfony 2 and Silex projects, and Ghost blogs_)
+(_built for standalone, Symfony 2 and Silex projects, simple Node applications and Ghost blogs_)
 
 - - -
 

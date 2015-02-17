@@ -47,7 +47,7 @@ main(){
 
   log_action "Starting Brad"
 
-  if [ ! "$type" = "ghost" ]; then
+  if [ ! "$type" = "ghost" ] && [ ! "$type" = "node" ]; then
     detect_php
   fi
 
@@ -155,7 +155,7 @@ main(){
 
     fi
     
-    restart_ghost_app    
+    restart_node_app    
     restart_hhvm  
     restart_apache_nginx
 
@@ -302,10 +302,10 @@ init_repo(){
   # Installing STAGING deployed environment
   if [ "$HAS_STAGING" -gt 0 ]; then
 
-    if [ ! "$type" = "ghost" ]; then
+    if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
       $ON_TARGET_DO mkdir -p ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
       $ON_TARGET_DO chmod 775 ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/uploads/${STAGING_DIRECTORY}
-    else
+    elif [ "$type" = "ghost" ]; then
       $ON_TARGET_DO mkdir -p ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/data/${STAGING_DIRECTORY}
       $ON_TARGET_DO chmod 775 ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/data/${STAGING_DIRECTORY}
       $ON_TARGET_DO mkdir -p ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/images/${STAGING_DIRECTORY}
@@ -366,10 +366,10 @@ init_repo(){
 
   fi
 
-  if [ ! "$type" = "ghost" ]; then
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
     $ON_TARGET_DO mkdir -p ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
     $ON_TARGET_DO chmod 775 ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/uploads/${LIVE_DIRECTORY}
-  else
+  elif [ "$type" = "ghost" ]; then
     $ON_TARGET_DO mkdir -p ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/data/${LIVE_DIRECTORY}
     $ON_TARGET_DO chmod 775 ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/data/${LIVE_DIRECTORY}
     $ON_TARGET_DO mkdir -p ${REMOTE_APPS_WEB_PATH}/${WWW_DIRECTORY}/${app}/images/${LIVE_DIRECTORY}
@@ -596,7 +596,7 @@ release(){
     $PHP_VM app/console cache:clear --env=prod
     $PHP_VM app/console assetic:dump -v --env=prod --no-debug
 
-  elif [ "$type" = "ghost" ]; then
+  elif [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
 
     cd ${RELEASE_PATH}
 
@@ -604,9 +604,11 @@ release(){
     npm install --loglevel warn
     npm install --production
 
-    # Creates the javascripts and stuff, with grunt.
-    ./node_modules/.bin/grunt init
-    ./node_modules/.bin/grunt prod
+    if [ "$type" = "ghost" ]; then
+      # Creates the javascripts and stuff, with grunt.
+      ./node_modules/.bin/grunt init
+      ./node_modules/.bin/grunt prod
+    fi
 
   fi
 
@@ -631,7 +633,7 @@ update_changelog(){
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
   elif [ "$type" = "standalone" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
-  elif [ "$type" = "ghost" ]; then
+  elif [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
   fi
 
@@ -881,7 +883,7 @@ cleanup(){
 # Restart Apache or Nginx
 restart_apache_nginx(){
 
-  if [ ! "$type" = "ghost" ]; then # Not really exactly true since we might want to restart nginx, but it's less common
+  if [ ! "$type" = "ghost" ] && [ ! "$type" = "node" ]; then # Not really exactly true since we might want to restart nginx, but it's less common
       
     ng=`$ON_TARGET_DO type -P "nginx" || echo ""` 
     if [ ! "$ng" = "" ]; then
@@ -908,10 +910,10 @@ restart_apache_nginx(){
   
 }
 
-# Restart the ghost blog app in supervisor
-restart_ghost_app(){
+# Restart the node blog app in supervisor
+restart_node_app(){
 
-  if [ "$type" = "ghost" ]; then
+  if [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
     # Restart the app in supervisorctl
     res=`ask "Do you wish to restart $app" "no"`
     case $res in
@@ -924,18 +926,20 @@ restart_ghost_app(){
   
 }
 
-# Restart HHVM in supervisor
+# Restart HHVM in supervisor, only for symfony2 or silex apps
 restart_hhvm(){
 
   if [ "$PHP_VM_REMOTE" = "hhvm" ]; then
-    # Restart HHVM through supervisorctl
-    res=`ask "Do you wish to restart HHVM" "no"`
-    case $res in
-        [Yy]* ) said_yes "Restarting HHVM via supervisorctl"
-                $ON_TARGET_DO sudo supervisorctl restart hhvm
-                ;;
-        * ) said_no ;;
-    esac
+    if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+      # Restart HHVM through supervisorctl
+      res=`ask "Do you wish to restart HHVM" "no"`
+      case $res in
+          [Yy]* ) said_yes "Restarting HHVM via supervisorctl"
+                  $ON_TARGET_DO sudo supervisorctl restart hhvm
+                  ;;
+          * ) said_no ;;
+      esac
+    fi
   fi
   
 }
