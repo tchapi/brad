@@ -21,6 +21,12 @@ APPS_BASE_PATH='/home/user'
 APPS_WEB_PATH='/var/www'
 ```
 
+Indicate also the user of the webserver :
+
+```bash
+WWW_USER='www-data'
+```
+
 This will be the root directory where the deployments will take place. This directory should not be served directly by your webserver, since the resulting directory structure will be :
 
 ```

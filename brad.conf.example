@@ -2,6 +2,7 @@
 APPS_BASE_PATH='/home/user'
 APPS_WEB_PATH='/var'
 LOG_DIRECTORY='/var/log/brad'
+WWW_USER='www-data'
 
 # Indicate an array of project here, for example :
 projects["my_project"]="standalone" # Can be "symfony2" or "silex" as well, and "ghost" and "node"
