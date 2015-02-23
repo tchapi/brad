@@ -288,10 +288,6 @@ init_repo(){
     error_exit
   fi
 
-  # We create a dir for the app if it doesn't already exist
-  mkdir -p ${DEPLOY_APP_BASE_PATH}
-  $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}
-
   # Check the existence of branches
   HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
   HAS_LIVE=`git ls-remote $GIT_URL | grep ${LIVE_BRANCH} | wc -l`
@@ -300,6 +296,10 @@ init_repo(){
     notify_error "no ${LIVE_BRANCH} branch"
     error_exit
   fi
+
+  # We create a dir for the app if it doesn't already exist
+  mkdir -p ${DEPLOY_APP_BASE_PATH}
+  $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}
 
   if [ "$HAS_STAGING" -lt 1 ]; then
     warn "no ${STAGING_BRANCH} branch"
