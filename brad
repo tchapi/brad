@@ -596,7 +596,7 @@ deploy(){
   
   else
 
-    indicate "No specific deployment actions for app " ${app}
+    indicate "No specific deployment actions for app" ${app}
 
   fi
 
