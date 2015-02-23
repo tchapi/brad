@@ -594,6 +594,10 @@ deploy(){
          * ) said_no ;;
     esac
   
+  else
+
+    indicate "No specific deployment actions for app " ${app}
+
   fi
 
 }
