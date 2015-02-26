@@ -610,17 +610,7 @@ release(){
   
   rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/.
 
-  # Symfony 2 Stuff
-  if [ "$type" = "symfony2" ]; then
-
-    cd ${RELEASE_PATH}
-
-    # Dump assetic assets
-    $PHP_VM app/console assets:install web --symlink --relative
-    $PHP_VM app/console cache:clear --env=prod
-    $PHP_VM app/console assetic:dump -v --env=prod --no-debug
-
-  elif [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
+  if [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
 
     cd ${RELEASE_PATH}
 
@@ -757,12 +747,19 @@ transfer(){
   fi
 
   if [ "$type" = "symfony2" ]; then
+
+    # Dump assetic assets
+    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assets:install web --symlink --relative
+    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:clear --env=prod
+    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assetic:dump -v --env=prod --no-debug
+
     # Warming up caches
     $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
     $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:warmup --env=prod
 
     # A good idea to chgrp www-data
-    $ON_TARGET_DO chgrp -R ${WWW_USER} ${WWW_PATH}/*
+    # $ON_TARGET_DO chgrp -R ${WWW_USER} ${WWW_PATH}/*
+    $ON_TARGET_DO chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}
 
     # Ensure that cache, logs are writable
     $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
