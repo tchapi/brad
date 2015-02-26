@@ -610,7 +610,17 @@ release(){
   
   rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/.
 
-  if [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
+  # Symfony 2 Stuff
+  if [ "$type" = "symfony2" ]; then
+
+    cd ${RELEASE_PATH}
+
+    # Dump assetic assets
+    $PHP_VM app/console assets:install web --symlink --relative
+    # $PHP_VM app/console cache:clear --env=prod
+    # $PHP_VM app/console assetic:dump -v --env=prod --no-debug
+
+  elif [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
 
     cd ${RELEASE_PATH}
 
@@ -749,7 +759,6 @@ transfer(){
   if [ "$type" = "symfony2" ]; then
 
     # Dump assetic assets
-    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assets:install web --symlink --relative
     $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:clear --env=prod
     $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assetic:dump -v --env=prod --no-debug
 
