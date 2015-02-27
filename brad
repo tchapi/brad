@@ -559,41 +559,23 @@ build_js(){
 # Deploys to current release
 deploy(){
 
-  # Should we install the vendors before deploying ?
+  # We should install vendors before deploying
   if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
 
     cd ${DEPLOY_PATH}
 
     # Symfony2 or Silex
-    yn=`ask "Do you wish to install [i] or update [u] vendors" "no"`
-    case $yn in
-        [Ii]* ) said_yes "Installing vendors via Composer"
+    indicate "Installing vendors via Composer for app" ${app}
 
-                $PHP_VM composer.phar self-update
-                $PHP_VM composer.phar install
+    $PHP_VM composer.phar self-update
+    $PHP_VM composer.phar install
 
-                # Cleaning the mess since it is a deploy folder
-                if [ "$type" = "symfony2" ]; then
-                  rm -fR ${DEPLOY_PATH}/web/bundles
-                  find ${DEPLOY_PATH}/app/cache/dev -delete
-                fi
+    # Cleaning the mess since it is a deploy folder
+    if [ "$type" = "symfony2" ]; then
+      rm -fR ${DEPLOY_PATH}/web/bundles
+      find ${DEPLOY_PATH}/app/cache/dev -delete
+    fi
 
-                ;;
-        [Uu]* ) said_yes "Updating vendors via Composer"
-
-                $PHP_VM composer.phar self-update
-                $PHP_VM composer.phar update
-
-                # Cleaning the mess since it is a deploy folder
-                if [ "$type" = "symfony2" ]; then
-                  rm -fR ${DEPLOY_PATH}/web/bundles
-                  find ${DEPLOY_PATH}/app/cache/dev -delete
-                fi
-
-                ;;
-         * ) said_no ;;
-    esac
-  
   else
 
     indicate "No specific deployment actions for app" ${app}
