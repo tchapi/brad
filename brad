@@ -599,8 +599,8 @@ release(){
 
     # Dump assetic assets
     $PHP_VM app/console assets:install web --symlink --relative
-    # $PHP_VM app/console cache:clear --env=prod
-    # $PHP_VM app/console assetic:dump -v --env=prod --no-debug
+    $PHP_VM app/console cache:clear --env=prod
+    $PHP_VM app/console assetic:dump -v --env=prod --no-debug
 
   elif [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
 
@@ -741,8 +741,8 @@ transfer(){
   if [ "$type" = "symfony2" ]; then
 
     # Dump assetic assets
-    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:clear --env=prod
-    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assetic:dump -v --env=prod --no-debug
+    # $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:clear --env=prod
+    # $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assetic:dump -v --env=prod --no-debug
 
     # Warming up caches
     $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
