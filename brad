@@ -610,12 +610,6 @@ release(){
     npm install --loglevel warn
     npm install --production
 
-    if [ "$type" = "ghost" ]; then
-      # Creates the javascripts and stuff, with grunt.
-      ./node_modules/.bin/grunt init
-      ./node_modules/.bin/grunt prod
-    fi
-
   fi
 
   clear
