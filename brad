@@ -599,7 +599,7 @@ release(){
 
     # Dump assetic assets
     $PHP_VM app/console assets:install web --symlink --relative
-    $PHP_VM app/console cache:clear --env=prod
+    #$PHP_VM app/console cache:clear --env=prod
     $PHP_VM app/console assetic:dump -v --env=prod --no-debug
 
   elif [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
