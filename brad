@@ -590,7 +590,11 @@ release(){
   # Copy all files to the destination folder
   mkdir -p ${RELEASE_PATH}
   
-  rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/.
+  if [ -f "${DEPLOY_PATH}/exclude-release.rsync" ]; then
+    rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/. --exclude-from "${DEPLOY_PATH}/exclude-release.rsync"
+  else
+    rsync -rlpt ${DEPLOY_PATH}/. ${RELEASE_PATH}/.
+  fi
 
   # Symfony 2 Stuff
   if [ "$type" = "symfony2" ]; then
