@@ -29,6 +29,7 @@ STAGING_DIRECTORY='beta'
 CLEANUP=0
 ROLLBACK=0
 INIT=0
+LATE_ASSETS=0
 
 # PHP Virtual machine used
 PHP_VM="php"
@@ -267,7 +268,9 @@ set_init_flag(){
 set_rollback_flag(){ 
   ROLLBACK=1
 }
-
+set_late_assets_flag(){ 
+  LATE_ASSETS=1
+}
 log_action(){
 
   if [ "$INIT" = 1 ]; then
@@ -603,8 +606,9 @@ release(){
 
     # Dump assetic assets
     $PHP_VM app/console assets:install web --symlink --relative
-    #$PHP_VM app/console cache:clear --env=prod
-    $PHP_VM app/console assetic:dump -v --env=prod --no-debug
+    if [ ! "$LATE_ASSETS" = 1 ]; then
+      $PHP_VM app/console assetic:dump -v --env=prod --no-debug
+    fi
 
   elif [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
 
@@ -739,8 +743,9 @@ transfer(){
   if [ "$type" = "symfony2" ]; then
 
     # Dump assetic assets
-    # $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:clear --env=prod
-    # $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assetic:dump -v --env=prod --no-debug
+    if [ "$LATE_ASSETS" = 1 ]; then
+      $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assetic:dump -v --env=prod --no-debug
+    fi
 
     # Warming up caches
     $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
