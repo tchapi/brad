@@ -580,7 +580,14 @@ deploy(){
     # Cleaning the mess since it is a deploy folder
     if [ "$type" = "symfony2" ]; then
       rm -fR ${DEPLOY_PATH}/web/bundles
-      find ${DEPLOY_PATH}/app/cache/dev -delete
+      rm -fR ${DEPLOY_PATH}/app/cache/dev
+      # This allows to warm the cache even if it fails, so the next command (assets) will not try to warm it
+      # and fail miserably
+      {
+        $PHP_VM app/console cache:clear --no-warmup -q
+      } || {
+        ack "Cache warmup tried"
+      }
     fi
 
   else
