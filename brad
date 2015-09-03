@@ -289,174 +289,184 @@ log_action(){
 
 init_repo(){
 
-  DIR_PATH=`readlink -f "${DEPLOY_APP_BASE_PATH}"` # Get rid of symlinks and get abs path
-  if [[ -d "${DIR_PATH}" ]] ; then # now we're testing
-    notify_error "This application already has a deployment folder ($app). Delete the whole folder and retry."
-    error_exit
-  fi
-
-  # Check the existence of branches
-  HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
-  HAS_LIVE=`git ls-remote $GIT_URL | grep ${LIVE_BRANCH} | wc -l`
-
+  # First ...
   if [ "$HAS_LIVE" -lt 1 ]; then
     notify_error "no ${LIVE_BRANCH} branch"
     error_exit
   fi
 
-  # We create a dir for the app if it doesn't already exist
-  mkdir -p ${DEPLOY_APP_BASE_PATH}
-  $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}
-
   if [ "$HAS_STAGING" -lt 1 ]; then
     warn "no ${STAGING_BRANCH} branch"
   fi
 
-  if [ "$type" = "symfony2" ]; then
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var  
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads
-  elif [ "$type" = "ghost" ]; then
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data  
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/images
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/images
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/apps
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/apps
-  fi
+  DIR_PATH=`readlink -f "${DEPLOY_APP_BASE_PATH}"` # Get rid of symlinks and get abs path
+  REMOTE_DIR_PATH=`readlink -f "${WWW_APP_BASE_PATH}"`
 
-  # Installing STAGING deployed environment
-  if [ "$HAS_STAGING" -gt 0 ]; then
+  if [[ -d "${DIR_PATH}" ]] ; then # now we're testing
+    warn "This application already has a deployment folder ($app). Continuing."
+  else
+    
+    # Check the existence of branches
+    HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
+    HAS_LIVE=`git ls-remote $GIT_URL | grep ${LIVE_BRANCH} | wc -l`
 
-    if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
-      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
-      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
-    elif [ "$type" = "ghost" ]; then
-      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data/${STAGING_DIRECTORY}
-      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data/${STAGING_DIRECTORY}
-      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/images/${STAGING_DIRECTORY}
-      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/images/${STAGING_DIRECTORY}
-      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/apps/${STAGING_DIRECTORY}
-      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/apps/${STAGING_DIRECTORY}
-    fi
+    # We create a dir for the app
+    mkdir -p ${DEPLOY_APP_BASE_PATH}
 
+    ###### LIVE ###### 
+    # Installing Live deployed environment
     cd ${DEPLOY_APP_BASE_PATH}
-    mkdir ${STAGING_DIRECTORY}
+    mkdir ${LIVE_DIRECTORY}
 
-    cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}
+    cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}
     git init
-    git remote add -t ${STAGING_BRANCH} -f origin $GIT_URL
-
-    git checkout ${STAGING_BRANCH}
+    git remote add -t ${LIVE_BRANCH} -f origin $GIT_URL
+    git checkout ${LIVE_BRANCH}
 
     if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
 
       curl -S http://getcomposer.org/installer | $PHP_VM
       $PHP_VM composer.phar self-update
       $PHP_VM composer.phar install --prefer-dist --optimize-autoloader --ignore-platform-reqs
-
     fi
 
     if [ "$type" = "symfony2" ]; then
-      # web/uploads for apache uploads
-      cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/web
-      ln -s ../../uploads/${STAGING_DIRECTORY} uploads
+      cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/web
+      ln -s ../../uploads/${LIVE_DIRECTORY} uploads
 
       # var/sessions for sessions storage
-      cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/app
-      ln -s ../../var/${STAGING_DIRECTORY} var
+      cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/app
+      ln -s ../../var/${LIVE_DIRECTORY} var
+
     elif [ "$type" = "ghost" ]; then
-      # content/data for db
-      cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content
-      rm -fR ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content/data 
-      ln -s ../../data/${STAGING_DIRECTORY} data
+      cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content
+      rm -fR ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content/data 
+      ln -s ../../data/${LIVE_DIRECTORY} data
 
       # content/images for images storage
-      cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content
-      rm -fR ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content/images 
-      ln -s ../../images/${STAGING_DIRECTORY} images
+      cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content
+      rm -fR ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content/images 
+      ln -s ../../images/${LIVE_DIRECTORY} images
 
       # content/apps for apps storage
-      cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content
-      rm -fR ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content/apps 
-      ln -s ../../apps/${STAGING_DIRECTORY} apps
+      cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content
+      rm -fR ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content/apps 
+      ln -s ../../apps/${LIVE_DIRECTORY} apps
     fi
 
-    # Session folder
+    ###### STAGING ###### 
+    # Installing STAGING deployed environment
+    if [ "$HAS_STAGING" -gt 0 ]; then
+
+      cd ${DEPLOY_APP_BASE_PATH}
+      mkdir ${STAGING_DIRECTORY}
+
+      cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}
+      git init
+      git remote add -t ${STAGING_BRANCH} -f origin $GIT_URL
+
+      git checkout ${STAGING_BRANCH}
+
+      if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+
+        curl -S http://getcomposer.org/installer | $PHP_VM
+        $PHP_VM composer.phar self-update
+        $PHP_VM composer.phar install --prefer-dist --optimize-autoloader --ignore-platform-reqs
+
+      fi
+
+      if [ "$type" = "symfony2" ]; then
+        # web/uploads for apache uploads
+        cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/web
+        ln -s ../../uploads/${STAGING_DIRECTORY} uploads
+
+        # var/sessions for sessions storage
+        cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/app
+        ln -s ../../var/${STAGING_DIRECTORY} var
+      elif [ "$type" = "ghost" ]; then
+        # content/data for db
+        cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content
+        rm -fR ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content/data 
+        ln -s ../../data/${STAGING_DIRECTORY} data
+
+        # content/images for images storage
+        cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content
+        rm -fR ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content/images 
+        ln -s ../../images/${STAGING_DIRECTORY} images
+
+        # content/apps for apps storage
+        cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content
+        rm -fR ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/content/apps 
+        ln -s ../../apps/${STAGING_DIRECTORY} apps
+      fi
+
+    fi
+
+  fi
+
+  if [[ -d "${REMOTE_DIR_PATH}" ]] ; then # now we're testing
+    warn "This application already has a remote app folder ($app). Continuing."
+  else
+
+    # Create remote folders
+    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}
+
     if [ "$type" = "symfony2" ]; then
-     
-      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var/${STAGING_DIRECTORY}/sessions
-      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var/${STAGING_DIRECTORY}/sessions
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var  
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads
+    elif [ "$type" = "ghost" ]; then
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data  
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/images
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/images
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/apps
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/apps
+    fi
+
+    ###### LIVE ###### 
+    if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY} 
+      # Session folder
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var/${LIVE_DIRECTORY}/sessions
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var/${LIVE_DIRECTORY}/sessions
+    elif [ "$type" = "ghost" ]; then
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data/${LIVE_DIRECTORY}
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data/${LIVE_DIRECTORY}
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/images/${LIVE_DIRECTORY}
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/images/${LIVE_DIRECTORY}
+      $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/apps/${LIVE_DIRECTORY}
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/apps/${LIVE_DIRECTORY}
+    fi
+
+    ###### STAGING ###### 
+    if [ "$HAS_STAGING" -gt 0 ]; then
+
+      if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+        $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
+        $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
+        # Session folder
+        $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var/${STAGING_DIRECTORY}/sessions
+        $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var/${STAGING_DIRECTORY}/sessions
+      elif [ "$type" = "ghost" ]; then
+        $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data/${STAGING_DIRECTORY}
+        $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data/${STAGING_DIRECTORY}
+        $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/images/${STAGING_DIRECTORY}
+        $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/images/${STAGING_DIRECTORY}
+        $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/apps/${STAGING_DIRECTORY}
+        $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/apps/${STAGING_DIRECTORY}
+      fi
 
     fi
 
   fi
-
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
-  elif [ "$type" = "ghost" ]; then
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data/${LIVE_DIRECTORY}
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data/${LIVE_DIRECTORY}
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/images/${LIVE_DIRECTORY}
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/images/${LIVE_DIRECTORY}
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/apps/${LIVE_DIRECTORY}
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/apps/${LIVE_DIRECTORY}
-  fi
-
-  # Installing PROD deployed environment
-  cd ${DEPLOY_APP_BASE_PATH}
-  mkdir ${LIVE_DIRECTORY}
-
-  cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}
-  git init
-  git remote add -t ${LIVE_BRANCH} -f origin $GIT_URL
-  git checkout ${LIVE_BRANCH}
-
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
-
-    curl -S http://getcomposer.org/installer | $PHP_VM
-    $PHP_VM composer.phar self-update
-    $PHP_VM composer.phar install --prefer-dist --optimize-autoloader --ignore-platform-reqs
-  fi
-
-  if [ "$type" = "symfony2" ]; then
-    cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/web
-    ln -s ../../uploads/${LIVE_DIRECTORY} uploads
-
-    # var/sessions for sessions storage
-    cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/app
-    ln -s ../../var/${LIVE_DIRECTORY} var
-
-  elif [ "$type" = "ghost" ]; then
-    cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content
-    rm -fR ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content/data 
-    ln -s ../../data/${LIVE_DIRECTORY} data
-
-    # content/images for images storage
-    cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content
-    rm -fR ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content/images 
-    ln -s ../../images/${LIVE_DIRECTORY} images
-
-    # content/apps for apps storage
-    cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content
-    rm -fR ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/content/apps 
-    ln -s ../../apps/${LIVE_DIRECTORY} apps
-  fi
-
-  # Session folder
-  if [ "$type" = "symfony2" ]; then
-    
-    $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var/${LIVE_DIRECTORY}/sessions
-    $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var/${LIVE_DIRECTORY}/sessions
-
-  fi
-
+  
   # Summary
 
   clear
-  ack "Created environnements :"
+  ack "Created or updated environnements :"
   indicate "Remote repository" ${GIT_URL}
 
   if [ "$HAS_STAGING" -gt 0 ]; then
