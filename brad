@@ -289,6 +289,10 @@ log_action(){
 
 init_repo(){
 
+  # Check the existence of branches
+  HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
+  HAS_LIVE=`git ls-remote $GIT_URL | grep ${LIVE_BRANCH} | wc -l`
+
   # First ...
   if [ "$HAS_LIVE" -lt 1 ]; then
     notify_error "no ${LIVE_BRANCH} branch"
@@ -306,10 +310,6 @@ init_repo(){
     warn "This application already has a deployment folder ($app). Continuing."
   else
     
-    # Check the existence of branches
-    HAS_STAGING=`git ls-remote $GIT_URL | grep ${STAGING_BRANCH} | wc -l`
-    HAS_LIVE=`git ls-remote $GIT_URL | grep ${LIVE_BRANCH} | wc -l`
-
     # We create a dir for the app
     mkdir -p ${DEPLOY_APP_BASE_PATH}
 
