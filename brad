@@ -304,7 +304,7 @@ init_repo(){
   fi
 
   DIR_PATH=`readlink -f "${DEPLOY_APP_BASE_PATH}"` # Get rid of symlinks and get abs path
-  REMOTE_DIR_PATH=`readlink -f "${WWW_APP_BASE_PATH}"`
+  REMOTE_DIR_PATH=`$ON_TARGET_DO readlink -f "${WWW_APP_BASE_PATH}"`
 
   if [[ -d "${DIR_PATH}" ]] ; then # now we're testing
     warn "This application already has a deployment folder ($app). Continuing."
@@ -404,7 +404,7 @@ init_repo(){
 
   fi
 
-  if [[ -d "${REMOTE_DIR_PATH}" ]] ; then # now we're testing
+  if [[ `$ON_TARGET_DO test -d ${REMOTE_DIR_PATH} && echo exists` ]] ; then # now we're testing
     warn "This application already has a remote app folder ($app). Continuing."
   else
 
