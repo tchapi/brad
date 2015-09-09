@@ -416,6 +416,8 @@ init_repo(){
       $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var
       $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads
       $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads
+      $ON_TARGET_DO sudo chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}/var
+      $ON_TARGET_DO sudo chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}/uploads
     elif [ "$type" = "ghost" ]; then
       $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data  
       $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data
@@ -428,10 +430,12 @@ init_repo(){
     ###### LIVE ###### 
     if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
       $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
-      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY} 
+      $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
+      $ON_TARGET_DO sudo chgrp -R ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
       # Session folder
       $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var/${LIVE_DIRECTORY}/sessions
       $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var/${LIVE_DIRECTORY}/sessions
+      $ON_TARGET_DO sudo chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}/var/${LIVE_DIRECTORY}/sessions
     elif [ "$type" = "ghost" ]; then
       $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data/${LIVE_DIRECTORY}
       $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data/${LIVE_DIRECTORY}
@@ -447,9 +451,11 @@ init_repo(){
       if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
         $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
         $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
+        $ON_TARGET_DO sudo chgrp -R ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
         # Session folder
         $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var/${STAGING_DIRECTORY}/sessions
         $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var/${STAGING_DIRECTORY}/sessions
+        $ON_TARGET_DO sudo chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}/var/${STAGING_DIRECTORY}/sessions
       elif [ "$type" = "ghost" ]; then
         $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/data/${STAGING_DIRECTORY}
         $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/data/${STAGING_DIRECTORY}
