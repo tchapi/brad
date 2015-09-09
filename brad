@@ -773,7 +773,7 @@ transfer(){
     $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:warmup --env=prod
 
     # A good idea to chgrp www-data
-    $ON_TARGET_DO chgrp -R ${WWW_USER} ${WWW_PATH}/*
+    $ON_TARGET_DO sudo chgrp -R ${WWW_USER} ${WWW_PATH}/*
     # $ON_TARGET_DO chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}
 
     # Ensure that cache, logs are writable
