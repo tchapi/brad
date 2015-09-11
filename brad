@@ -327,7 +327,7 @@ init_repo(){
 
       curl -S http://getcomposer.org/installer | $PHP_VM
       $PHP_VM composer.phar self-update
-      $PHP_VM composer.phar install --prefer-dist --optimize-autoloader --ignore-platform-reqs
+      $PHP_VM composer.phar install --prefer-dist --ignore-platform-reqs # --optimize-autoloader
     fi
 
     if [ "$type" = "symfony2" ]; then
@@ -371,7 +371,7 @@ init_repo(){
 
         curl -S http://getcomposer.org/installer | $PHP_VM
         $PHP_VM composer.phar self-update
-        $PHP_VM composer.phar install --prefer-dist --optimize-autoloader --ignore-platform-reqs
+        $PHP_VM composer.phar install --prefer-dist --ignore-platform-reqs # --optimize-autoloader
 
       fi
 
@@ -591,7 +591,7 @@ deploy(){
     indicate "Installing vendors via Composer for app" ${app}
 
     $PHP_VM composer.phar self-update
-    $PHP_VM composer.phar install --optimize-autoloader --ignore-platform-reqs
+    $PHP_VM composer.phar install --ignore-platform-reqs # --optimize-autoloader
 
     # Cleaning the mess since it is a deploy folder
     if [ "$type" = "symfony2" ]; then
