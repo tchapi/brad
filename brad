@@ -971,16 +971,16 @@ restart_node_app(){
   
 }
 
-# Restart HHVM in supervisor, only for symfony2 or silex apps
+# Restart HHVM, only for symfony2 or silex apps
 restart_hhvm(){
 
   if [ "$PHP_VM_REMOTE" = "hhvm" ]; then
     if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
-      # Restart HHVM through supervisorctl
+      # Restart HHVM through service
       res=`ask "Do you wish to restart HHVM" "no"`
       case $res in
-          [Yy]* ) said_yes "Restarting HHVM via supervisorctl"
-                  $ON_TARGET_DO sudo supervisorctl restart hhvm
+          [Yy]* ) said_yes "Restarting HHVM"
+                  $ON_TARGET_DO sudo service hhvm restart
                   ;;
           * ) said_no ;;
       esac
