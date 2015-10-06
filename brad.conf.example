@@ -10,3 +10,4 @@ projects["my_project"]="standalone" # Can be "symfony2" or "silex" as well, and 
   remote["my_project", "port"]="22" # For SSH
   remote["my_project", "user"]="patrick"
   remote["my_project", "path"]="/home/patrick/web"
+  remote["my_project", "php_engine"]="php" # or hhvm, optional

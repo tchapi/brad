@@ -34,7 +34,7 @@ BUMP_VERSION=0
 
 # PHP Virtual machine used
 PHP_VM="php"
-PHP_VM_REMOTE="php"
+PHP_VM_REMOTE=""
 
 # Loads the config
 load_config_file "$(dirname $0)/brad.conf"
@@ -98,6 +98,7 @@ main(){
   # Application name and type
   ack "This application ${app} is" ${type}
   ack "Deployment target" ${remote}
+  ack "Deployment PHP engine (when applicable)" ${PHP_VM_REMOTE}
   clear
   
   indicate "Local deployment path" ${DEPLOY_PATH}
@@ -178,7 +179,7 @@ main(){
     fi
     
     restart_node_app    
-    restart_hhvm  
+    restart_php_engine
     restart_apache_nginx
 
     # ---- END : DEPLOY ----
@@ -191,10 +192,12 @@ main(){
 
 detect_php(){
 
-  type -P "hhvm" &>/dev/null && PHP_VM="hhvm"
-  remote_php=`$ON_TARGET_DO type -P "hhvm" || echo ""` 
-  if [ ! "$remote_php" = "" ]; then
-    PHP_VM_REMOTE="hhvm"
+  if [ "${PHP_VM_REMOTE-}" = "" ]; then
+    type -P "hhvm" &>/dev/null && PHP_VM="hhvm"
+    remote_php=`$ON_TARGET_DO type -P "hhvm" || echo ""` 
+    if [ ! "$remote_php" = "" ]; then
+      PHP_VM_REMOTE="hhvm"
+    fi
   fi
 
 }
@@ -222,6 +225,7 @@ check_arguments(){
         port=${remote["$project_slug", "port"]}
         path=${remote["$project_slug", "path"]}
         user=${remote["$project_slug", "user"]}
+        php_engine=${remote["$project_slug", "php_engine"]-}
       fi
       project_found=true
     fi
@@ -254,6 +258,10 @@ check_arguments(){
     remote="localhost"
     ON_TARGET_DO=""
     REMOTE_APPS_WEB_PATH=${APPS_WEB_PATH}
+  fi
+
+  if [ ! "${php_engine-}" = "" ]; then
+    PHP_VM_REMOTE="${php_engine}"
   fi
 
 }
@@ -971,22 +979,33 @@ restart_node_app(){
   
 }
 
-# Restart HHVM, only for symfony2 or silex apps
-restart_hhvm(){
+# Restart PHP / HHVM, only for symfony2 or silex apps
+restart_php_engine(){
 
-  if [ "$PHP_VM_REMOTE" = "hhvm" ]; then
-    if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
-      # Restart HHVM through service
-      res=`ask "Do you wish to restart HHVM" "no"`
-      case $res in
-          [Yy]* ) said_yes "Restarting HHVM"
-                  $ON_TARGET_DO sudo service hhvm restart
-                  ;;
-          * ) said_no ;;
-      esac
+  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then 
+
+    if [ "$PHP_VM_REMOTE" = "hhvm" ]; then
+        # Restart HHVM through service
+        res=`ask "Do you wish to restart HHVM" "no"`
+        case $res in
+            [Yy]* ) said_yes "Restarting HHVM"
+                    $ON_TARGET_DO sudo service hhvm restart
+                    ;;
+            * ) said_no ;;
+        esac
+    else 
+        # Restart PHP-FPM through service
+        res=`ask "Do you wish to restart PHP-FPM" "no"`
+        case $res in
+            [Yy]* ) said_yes "Restarting PHP-FPM"
+                    $ON_TARGET_DO sudo service php5-fpm restart
+                    ;;
+            * ) said_no ;;
+        esac
     fi
-  fi
   
+  fi
+
 }
 
 # Runs the application
