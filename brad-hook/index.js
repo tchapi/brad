@@ -3,10 +3,6 @@ var app = express();
 
 var rangeCheck = require('range_check');
 
-var sys = require('util')
-var spawn = require('child_process').spawn;
-
-
 // Extract projects from the config file
 var fs = require('fs')
 
@@ -46,6 +42,7 @@ app.post('/hook/:name/:env', function (req, res) {
     if ((env == "prod" || env == "beta") && projects.indexOf(name) != -1) {
       console.log("Deploying for " + name + " to env " + env);
 
+      const spawn = require('child_process').spawn;
       const ls = spawn('../brad', ['-y', name, env]);
 
       ls.stdout.on('data', function (data) {
