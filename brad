@@ -109,7 +109,7 @@ main(){
     indicate "Live www path" ${WWW_PATH}
     indicate "Live www link" ${WWW_LINK}
   fi
-  if [ "$UNATTENDED" = 1 ]; 
+  if [ "$UNATTENDED" = 1 ]; then
     answer="Y"
   else
     answer=`ask "Are you sure you want to continue" "no"`
@@ -539,7 +539,7 @@ git_pull(){
 lock_maintenance(){
 
   if [ -e ${WWW_WEB_LINK}"/maintenance.off.html" ]; then
-    if [ "$UNATTENDED" = 1 ]; 
+    if [ "$UNATTENDED" = 1 ]; then
       answer="Y"
     else
       answer=`ask "Do you wish to lock in maintenance mode" "no"`
@@ -557,7 +557,7 @@ lock_maintenance(){
 unlock_maintenance(){
 
   if [ -e ${WWW_WEB_LINK}"/maintenance.html" ]; then
-    if [ "$UNATTENDED" = 1 ]; 
+    if [ "$UNATTENDED" = 1 ]; then
       answer="Y"
     else
       answer=`ask "Do you wish to unlock from maintenance mode" "no"`
@@ -587,7 +587,7 @@ build_js(){
 
   # Building minified JS if we have a minify script in admin/
   if [ -e ${ADMIN_PATH}"/minify.php" ]; then
-    if [ "$UNATTENDED" = 1 ]; 
+    if [ "$UNATTENDED" = 1 ]; then
       answer="Y"
     else
       answer=`ask "Do you wish to build minified Javascript" "no"`
@@ -752,7 +752,7 @@ revert(){
 
     clear
     warn "Rollback path" ${LAST_PATH}
-    if [ "$UNATTENDED" = 1 ]; 
+    if [ "$UNATTENDED" = 1 ]; then
       yn="Y"
     else
       yn=`ask "Are you sure you want to rollback (link)" "no"`
@@ -833,7 +833,7 @@ upgrade_db() {
     clear
 
     if ! [[ "$UPDATES" =~ "Nothing to update" ]]; then
-      if [ "$UNATTENDED" = 1 ]; 
+      if [ "$UNATTENDED" = 1 ]; then
         yn="Y"
       else
         yn=`ask "Do you wish to update the schema" "no"`
@@ -856,7 +856,7 @@ upgrade_db() {
 
 # Link the full folder
 link_full(){
-  if [ "$UNATTENDED" = 1 ]; 
+  if [ "$UNATTENDED" = 1 ]; then
     yn="Y"
   else
     yn=`ask "Do you wish to promote (link)" "no"`
@@ -875,7 +875,7 @@ link_full(){
 install_crontabs(){
 
   if [ -f "${DEPLOY_PATH}/crontabs" ]; then
-    if [ "$UNATTENDED" = 1 ]; 
+    if [ "$UNATTENDED" = 1 ]; then
       yn="Y"
     else
       yn=`ask "Do you want to reinstall cron jobs" "no"`
@@ -943,7 +943,7 @@ cleanup(){
   for f in $PREVIOUS_PATHS; do
     warn "${app} ($env)" $f
   done
-  if [ "$UNATTENDED" = 1 ]; 
+  if [ "$UNATTENDED" = 1 ]; then
     yn="Y"
   else
     yn=`ask "Are you sure you want to cleanup" "no"`
@@ -973,7 +973,7 @@ restart_apache_nginx(){
     ng=`$ON_TARGET_DO type -P "nginx" || echo ""` 
     if [ ! "$ng" = "" ]; then
       # Restart Apache
-      if [ "$UNATTENDED" = 1 ]; 
+      if [ "$UNATTENDED" = 1 ]; then
         res="Y"
       else
         res=`ask "Do you wish to restart Apache2" "no"`
@@ -986,7 +986,7 @@ restart_apache_nginx(){
       esac
     else
       # Restart Nginx
-      if [ "$UNATTENDED" = 1 ]; 
+      if [ "$UNATTENDED" = 1 ]; then
         res="Y"
       else
         res=`ask "Do you wish to restart Nginx" "no"`
@@ -1008,7 +1008,7 @@ restart_node_app(){
 
   if [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
     # Restart the app in supervisorctl
-    if [ "$UNATTENDED" = 1 ]; 
+    if [ "$UNATTENDED" = 1 ]; then
       res="Y"
     else
       res=`ask "Do you wish to restart $app" "no"`
@@ -1030,7 +1030,7 @@ restart_php_engine(){
 
     if [ "$PHP_VM_REMOTE" = "hhvm" ]; then
         # Restart HHVM through service
-        if [ "$UNATTENDED" = 1 ]; 
+        if [ "$UNATTENDED" = 1 ]; then
           res="Y"
         else
           res=`ask "Do you wish to restart HHVM" "no"`
@@ -1043,7 +1043,7 @@ restart_php_engine(){
         esac
     else 
         # Restart PHP-FPM through service
-        if [ "$UNATTENDED" = 1 ]; 
+        if [ "$UNATTENDED" = 1 ]; then
           res="Y"
         else
           res=`ask "Do you wish to restart PHP-FPM" "no"`
