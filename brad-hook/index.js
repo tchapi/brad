@@ -4,7 +4,7 @@ var app = express();
 var rangeCheck = require('range_check');
 
 var sys = require('util')
-var exec = require('child_process').exec;
+var exec = require('child_process').spawn;
 
 
 // Extract projects from the config file
@@ -46,17 +46,20 @@ app.post('/hook/:name/:env', function (req, res) {
     if ((env == "prod" || env == "beta") && projects.indexOf(name) != -1) {
       console.log("Deploying for " + name + " to env " + env);
 
-      // http://nodejs.org/api.html#_child_processes
-      var child = exec("../brad -y " + name + " " + env, function (error, stdout, stderr) {
-        
-        if (error !== null) {
-          console.log('exec error: ' + error);
-          console.log('stderr: ' + stderr);
-          res.sendStatus(404);
-        } else {
-          console.log('stdout: ' + stdout);
-          res.sendStatus(200);
-        }
+      const ls = spawn('../brad', ['-y', name, env]);
+
+      ls.stdout.on('data', function (data) {
+        console.log("stdout: " + data );
+        res.sendStatus(200);
+      });
+
+      ls.stderr.on('data', function (data) {
+        console.log("stderr: " + data);
+        res.sendStatus(500);
+      });
+
+      ls.on('close', function (code) {
+        console.log("child process exited with code: " + code);
       });
 
     } else {
@@ -65,7 +68,7 @@ app.post('/hook/:name/:env', function (req, res) {
     }
 
   } else {
-    res.sendStatus(404);
+    res.sendStatus(403);
   }
 });
 
