@@ -22,6 +22,10 @@ while ((result = re.exec(data)) !== null) {
     }
 }
 
+app.get('/hooks', function (req, res) {
+  res.send(projects);
+});
+
 app.post('/hook/:name/:env', function (req, res) {
   // A trigger has been made, first authenticate the sender (Github, bitbucket) :
   var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
