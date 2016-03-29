@@ -62,7 +62,7 @@ Before a project can be initialized, you have to add it in the `brad.conf` confi
 ```bash
 projects["app_1"]="standalone"
 projects["my_symfony2_app"]="symfony2"
-```          
+```
 
   - `standalone` references a standard project.
   - `symfony2` (or `silex`) explicitely references a project that is based on the [Symfony2](http://symfony.com) (or Silex) framework. 
@@ -80,6 +80,12 @@ remote["app_1", "path"]="/home/webuser/sites"
 ```                  
 
 > NB : It's easier if the target remote server has the key of the deployment server, to avoid password prompting.
+
+You can also indicate the PHP binary to use when deploying :
+
+```bash
+remote["app1", "php_engine"]="php" # or hhvm, optional
+```
 
 ## Cloning and initing a project
 
@@ -162,6 +168,15 @@ $ ./brad my_app environment
 
   - beta (staging area, if available)
   - prod (live environment)
+
+
+### Unattended deployment
+
+By passing `-y` as a parameter, you can have an unattended deployment process. All the prompts will be yess'ed.
+
+```bash
+$ ./brad -y my_app environment
+```
 
 ## Rollbacking to a previous deployment
 

@@ -27,6 +27,7 @@ STAGING_DIRECTORY='beta'
 
 # Init flags
 CLEANUP=0
+UNATTENDED=0
 ROLLBACK=0
 INIT=0
 LATE_ASSETS=0
@@ -108,8 +109,11 @@ main(){
     indicate "Live www path" ${WWW_PATH}
     indicate "Live www link" ${WWW_LINK}
   fi
-
-  answer=`ask "Are you sure you want to continue" "no"`
+  if [ "$UNATTENDED" = 1 ]; 
+    answer="Y"
+  else
+    answer=`ask "Are you sure you want to continue" "no"`
+  fi
   case $answer in
       [Yy]* ) said_yes "Let's go !" ;;
       * ) said_no 
@@ -273,6 +277,9 @@ set_cleanup_flag(){
 set_init_flag(){ 
   INIT=1
   GIT_URL="$1"
+}
+set_unattended_flag(){ 
+  UNATTENDED=1
 }
 set_rollback_flag(){ 
   ROLLBACK=1
@@ -532,7 +539,11 @@ git_pull(){
 lock_maintenance(){
 
   if [ -e ${WWW_WEB_LINK}"/maintenance.off.html" ]; then
-    answer=`ask "Do you wish to lock in maintenance mode" "no"`
+    if [ "$UNATTENDED" = 1 ]; 
+      answer="Y"
+    else
+      answer=`ask "Do you wish to lock in maintenance mode" "no"`
+    fi
     case $answer in
         [Yy]* ) said_yes "Setting maintenance mode"
                 $ON_TARGET_DO mv ${WWW_WEB_LINK}/maintenance.off.html ${WWW_WEB_LINK}/maintenance.html
@@ -546,7 +557,11 @@ lock_maintenance(){
 unlock_maintenance(){
 
   if [ -e ${WWW_WEB_LINK}"/maintenance.html" ]; then
-    answer=`ask "Do you wish to unlock from maintenance mode" "no"`
+    if [ "$UNATTENDED" = 1 ]; 
+      answer="Y"
+    else
+      answer=`ask "Do you wish to unlock from maintenance mode" "no"`
+    fi
     case $answer in
         [Yy]* ) said_yes "Unlocking from maintenance mode"
                 $ON_TARGET_DO mv ${WWW_WEB_LINK}/maintenance.html ${WWW_WEB_LINK}/maintenance.off.html
@@ -572,8 +587,11 @@ build_js(){
 
   # Building minified JS if we have a minify script in admin/
   if [ -e ${ADMIN_PATH}"/minify.php" ]; then
-
-    answer=`ask "Do you wish to build minified Javascript" "no"`
+    if [ "$UNATTENDED" = 1 ]; 
+      answer="Y"
+    else
+      answer=`ask "Do you wish to build minified Javascript" "no"`
+    fi
     case $answer in
         [Yy]* ) said_yes "Building minified JS"
                 cd ${ADMIN_PATH}
@@ -734,8 +752,11 @@ revert(){
 
     clear
     warn "Rollback path" ${LAST_PATH}
-
-    yn=`ask "Are you sure you want to rollback (link)" "no"`
+    if [ "$UNATTENDED" = 1 ]; 
+      yn="Y"
+    else
+      yn=`ask "Are you sure you want to rollback (link)" "no"`
+    fi
     case $yn in
         [Yy]* ) said_yes "Rollbacking"
                 $ON_TARGET_DO ln -sfvn ${LAST_PATH} ${WWW_LINK}
@@ -812,8 +833,11 @@ upgrade_db() {
     clear
 
     if ! [[ "$UPDATES" =~ "Nothing to update" ]]; then
-
-      yn=`ask "Do you wish to update the schema" "no"`
+      if [ "$UNATTENDED" = 1 ]; 
+        yn="Y"
+      else
+        yn=`ask "Do you wish to update the schema" "no"`
+      fi
       case $yn in
           [Yy]* ) said_yes "Updating schema"
                   $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
@@ -832,8 +856,11 @@ upgrade_db() {
 
 # Link the full folder
 link_full(){
-
-  yn=`ask "Do you wish to promote (link)" "no"`
+  if [ "$UNATTENDED" = 1 ]; 
+    yn="Y"
+  else
+    yn=`ask "Do you wish to promote (link)" "no"`
+  fi
   case $yn in
       [Yy]* ) said_yes "Linking"
               $ON_TARGET_DO ln -sfvn ${WWW_PATH} ${WWW_LINK}
@@ -848,8 +875,11 @@ link_full(){
 install_crontabs(){
 
   if [ -f "${DEPLOY_PATH}/crontabs" ]; then
-
-    yn=`ask "Do you want to reinstall cron jobs" "no"`
+    if [ "$UNATTENDED" = 1 ]; 
+      yn="Y"
+    else
+      yn=`ask "Do you want to reinstall cron jobs" "no"`
+    fi
     case $yn in
         [Yy]* ) said_yes "Installing crontabs"
 
@@ -913,8 +943,11 @@ cleanup(){
   for f in $PREVIOUS_PATHS; do
     warn "${app} ($env)" $f
   done
-
-  yn=`ask "Are you sure you want to cleanup" "no"`
+  if [ "$UNATTENDED" = 1 ]; 
+    yn="Y"
+  else
+    yn=`ask "Are you sure you want to cleanup" "no"`
+  fi
   case $yn in
       [Yy]* ) said_yes "Cleaning up"
               for f in $PREVIOUS_PATHS
@@ -940,17 +973,24 @@ restart_apache_nginx(){
     ng=`$ON_TARGET_DO type -P "nginx" || echo ""` 
     if [ ! "$ng" = "" ]; then
       # Restart Apache
-      res=`ask "Do you wish to restart Apache2" "no"`
+      if [ "$UNATTENDED" = 1 ]; 
+        res="Y"
+      else
+        res=`ask "Do you wish to restart Apache2" "no"`
+      fi
       case $res in
           [Yy]* ) said_yes "Restarting Apache2"
                   $ON_TARGET_DO sudo service apache2 restart
-                  # For a special server only [legacy] $ON_TARGET_DO sudo /root/apachereload.sh #sudo service apache2 restart
                   ;;
           * ) said_no ;;
       esac
     else
       # Restart Nginx
-      res=`ask "Do you wish to restart Nginx" "no"`
+      if [ "$UNATTENDED" = 1 ]; 
+        res="Y"
+      else
+        res=`ask "Do you wish to restart Nginx" "no"`
+      fi
       case $res in
           [Yy]* ) said_yes "Restarting Nginx"
                   $ON_TARGET_DO sudo service nginx restart
@@ -968,7 +1008,11 @@ restart_node_app(){
 
   if [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
     # Restart the app in supervisorctl
-    res=`ask "Do you wish to restart $app" "no"`
+    if [ "$UNATTENDED" = 1 ]; 
+      res="Y"
+    else
+      res=`ask "Do you wish to restart $app" "no"`
+    fi
     case $res in
         [Yy]* ) said_yes "Restarting $app via supervisorctl"
                 $ON_TARGET_DO sudo supervisorctl restart ${app}
@@ -986,7 +1030,11 @@ restart_php_engine(){
 
     if [ "$PHP_VM_REMOTE" = "hhvm" ]; then
         # Restart HHVM through service
-        res=`ask "Do you wish to restart HHVM" "no"`
+        if [ "$UNATTENDED" = 1 ]; 
+          res="Y"
+        else
+          res=`ask "Do you wish to restart HHVM" "no"`
+        fi
         case $res in
             [Yy]* ) said_yes "Restarting HHVM"
                     $ON_TARGET_DO sudo service hhvm restart
@@ -995,7 +1043,11 @@ restart_php_engine(){
         esac
     else 
         # Restart PHP-FPM through service
-        res=`ask "Do you wish to restart PHP-FPM" "no"`
+        if [ "$UNATTENDED" = 1 ]; 
+          res="Y"
+        else
+          res=`ask "Do you wish to restart PHP-FPM" "no"`
+        fi
         case $res in
             [Yy]* ) said_yes "Restarting PHP-FPM"
                     $ON_TARGET_DO sudo service php5-fpm restart
