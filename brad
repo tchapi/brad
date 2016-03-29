@@ -616,7 +616,7 @@ deploy(){
     # Symfony2 or Silex
     indicate "Installing vendors via Composer for app" ${app}
 
-    $PHP_VM composer.phar self-update
+    # $PHP_VM composer.phar self-update
     $PHP_VM composer.phar install --ignore-platform-reqs # --optimize-autoloader
 
     # Cleaning the mess since it is a deploy folder
