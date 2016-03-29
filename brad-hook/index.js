@@ -50,7 +50,6 @@ app.post('/hook/:name/:env', function (req, res) {
 
       ls.stdout.on('data', function (data) {
         console.log("stdout: " + data );
-        res.sendStatus(200);
       });
 
       ls.stderr.on('data', function (data) {
@@ -60,6 +59,11 @@ app.post('/hook/:name/:env', function (req, res) {
 
       ls.on('close', function (code) {
         console.log("child process exited with code: " + code);
+        if (code == 0) {
+          res.sendStatus(200);
+        } else {
+          res.sendStatus(500);  
+        }
       });
 
     } else {
