@@ -4,7 +4,7 @@ var app = express();
 var rangeCheck = require('range_check');
 
 var sys = require('util')
-var exec = require('child_process').spawn;
+var spawn = require('child_process').spawn;
 
 
 // Extract projects from the config file
