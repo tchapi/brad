@@ -64,6 +64,6 @@ app.post('/hook/:name/:env', function (req, res) {
   }
 });
 
-app.listen(3000, function () {
-  console.log('Brad hook — listening on port 3000');
+app.listen(4978, function () {
+  console.log('Brad hook — listening on port 4978');
 });
