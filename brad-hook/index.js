@@ -31,7 +31,7 @@ app.post('/hook/:name/:env', function (req, res) {
   var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
   // Bitbucket
-  if (ip == "::1" 
+  if (ip == "::1" || ip == "127.0.0.1"
     || 
     // Bitbucket
     rangeCheck.inRange(ip, ['131.103.20.160/27', '165.254.145.0/26', '104.192.143.0/24']) 
@@ -51,6 +51,7 @@ app.post('/hook/:name/:env', function (req, res) {
         
         if (error !== null) {
           console.log('exec error: ' + error);
+          console.log('stderr: ' + stderr);
           res.sendStatus(404);
         } else {
           console.log('stdout: ' + stdout);
