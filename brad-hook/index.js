@@ -51,7 +51,6 @@ app.post('/hook/:name/:env', function (req, res) {
 
       ls.stderr.on('data', function (data) {
         console.log("stderr: " + data);
-        res.sendStatus(500);
       });
 
       ls.on('close', function (code) {

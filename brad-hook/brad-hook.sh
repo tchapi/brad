@@ -23,9 +23,9 @@ start() {
     return 1
   fi
   echo 'Starting service…' >&2
-  sudo sh -c "$SCRIPT &> \"$LOGFILE\" & echo \$!"
-  #sudo su -m -c "$CMD" $RUNAS
-  sleep 1 # some time to get only the good pid
+  
+  local CMD="$SCRIPT &> \"$LOGFILE\" & echo \$!"
+  sudo -E su $RUNAS -c "bash -c '$CMD'"
   sudo sh -c "$PIDGET > $PIDFILE"
 }
 
