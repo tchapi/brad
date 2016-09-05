@@ -272,9 +272,11 @@ check_arguments(){
   if [ "$type" = "symfony2" ]; then
     type="symfony"
     SYMFONY_CONSOLE="app/console"
+    LOG_CACHE_DIR="app"
   elif [ "$type" = "symfony3" ]; then
     type="symfony"
     SYMFONY_CONSOLE="bin/console"
+    LOG_CACHE_DIR="var"
   fi
 
 }
@@ -634,7 +636,7 @@ deploy(){
     # Cleaning the mess since it is a deploy folder
     if [ "$type" = "symfony" ]; then
       rm -fR ${DEPLOY_PATH}/web/bundles
-      rm -fR ${DEPLOY_PATH}/app/cache/dev
+      rm -fR ${DEPLOY_PATH}/${LOG_CACHE_DIR}/cache/dev
       # This allows to warm the cache even if it fails, so the next command (assets) will not try to warm it
       # and fail miserably
       {
@@ -671,7 +673,7 @@ release(){
 
     # Dump assetic assets
     $PHP_VM ${SYMFONY_CONSOLE} assets:install web --symlink --relative
-    if [ ! "$LATE_ASSETS" = 1 ] && [ ! "$NO_ASSETIC" = 1]; then
+    if [ ! "$LATE_ASSETS" = 1 ] && [ ! "$NO_ASSETIC" = 1 ]; then
       $PHP_VM ${SYMFONY_CONSOLE} assetic:dump -v --env=prod --no-debug
     fi
 
@@ -811,12 +813,12 @@ transfer(){
   if [ "$type" = "symfony" ]; then
 
     # Dump assetic assets
-    if [ "$LATE_ASSETS" = 1 ] && [ ! "$NO_ASSETIC" = 1]; then
+    if [ "$LATE_ASSETS" = 1 ] && [ ! "$NO_ASSETIC" = 1 ]; then
       $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/${SYMFONY_CONSOLE} assetic:dump -v --env=prod --no-debug
     fi
 
     # Warming up caches
-    $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
+    $ON_TARGET_DO rm -fR ${WWW_PATH}/${LOG_CACHE_DIR}/cache/prod ${WWW_PATH}/${LOG_CACHE_DIR}/cache/dev
     $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/${SYMFONY_CONSOLE} cache:warmup --env=prod
 
     # A good idea to chgrp www-data
@@ -824,8 +826,8 @@ transfer(){
     # $ON_TARGET_DO chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}
 
     # Ensure that cache, logs are writable
-    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/app/cache ${WWW_PATH}/app/logs # web/uploads
-    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/app/cache/*
+    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/${LOG_CACHE_DIR}/cache ${WWW_PATH}/${LOG_CACHE_DIR}/logs # web/uploads
+    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/${LOG_CACHE_DIR}/cache/*
   fi
   
   clear
