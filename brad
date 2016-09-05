@@ -31,6 +31,7 @@ UNATTENDED=0
 ROLLBACK=0
 INIT=0
 LATE_ASSETS=0
+NO_ASSETIC=0
 BUMP_VERSION=0
 
 # PHP Virtual machine used
@@ -294,6 +295,9 @@ set_rollback_flag(){
 }
 set_late_assets_flag(){ 
   LATE_ASSETS=1
+}
+set_no_assetic_flag(){ 
+  NO_ASSETIC=1
 }
 set_bump_version_flag(){
   BUMP_VERSION=1
@@ -667,7 +671,7 @@ release(){
 
     # Dump assetic assets
     $PHP_VM ${SYMFONY_CONSOLE} assets:install web --symlink --relative
-    if [ ! "$LATE_ASSETS" = 1 ]; then
+    if [ ! "$LATE_ASSETS" = 1 ] && [ ! "$NO_ASSETIC" = 1]; then
       $PHP_VM ${SYMFONY_CONSOLE} assetic:dump -v --env=prod --no-debug
     fi
 
@@ -807,7 +811,7 @@ transfer(){
   if [ "$type" = "symfony" ]; then
 
     # Dump assetic assets
-    if [ "$LATE_ASSETS" = 1 ]; then
+    if [ "$LATE_ASSETS" = 1 ] && [ ! "$NO_ASSETIC" = 1]; then
       $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/${SYMFONY_CONSOLE} assetic:dump -v --env=prod --no-debug
     fi
 
