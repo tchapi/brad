@@ -1,7 +1,7 @@
 # Brad
 
 Build, release and deploy
-(_built for standalone, Symfony 2 and Silex projects, simple Node applications and Ghost blogs_)
+(_built for standalone, Symfony 2 & 3 and Silex projects, simple Node applications and Ghost blogs_)
 
 - - -
 
@@ -65,7 +65,7 @@ projects["my_symfony2_app"]="symfony2"
 ```
 
   - `standalone` references a standard project.
-  - `symfony2` (or `silex`) explicitely references a project that is based on the [Symfony2](http://symfony.com) (or Silex) framework. 
+  - `symfony2`, `symfony3` (or `silex`) explicitely references a project that is based on the [Symfony](http://symfony.com) (or Silex) framework. 
   - `ghost` references a project that uses node.js and the [ghost](ghost.org) blogging framework.
 
 This is used when initing and deploying to accomplish tasks such as cache warmup, schema update, etc ...
@@ -147,7 +147,7 @@ In the case of a Symfony 2 project (_automatically detected with the existence o
   - `uploads` (_to store the user uploads_)
   - `var/sessions` (_to store the user sessions — this allows to separate the cache from the sessions and deploy without logging out all the users if configured in the Symfony 2 application_)
 
-Links (symbolic) to these folders are created respectively in `web/` and in `app/` of your Symfony2 application.
+Links (symbolic) to these folders are created respectively in `web/` and in `app/` of your Symfony application.
 
 In the case of a Ghost blog, two folders are created as well :
 

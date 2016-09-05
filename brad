@@ -74,7 +74,7 @@ main(){
     WWW_PATH=${WWW_APP_BASE_PATH}'/rel-'${env}'-'${date_today}"-"${timestamp}
     WWW_LINK=${WWW_APP_BASE_PATH}'/'${env}
 
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+  if [ "$type" = "symfony" ] || [ "$type" = "silex" ]; then
     WWW_WEB_LINK=${WWW_LINK}/web
   else
     WWW_WEB_LINK=${WWW_LINK}
@@ -268,6 +268,14 @@ check_arguments(){
     PHP_VM_REMOTE="${php_engine}"
   fi
 
+  if [ "$type" = "symfony2" ]; then
+    type="symfony"
+    SYMFONY_CONSOLE="app/console"
+  elif [ "$type" = "symfony3" ]; then
+    type="symfony"
+    SYMFONY_CONSOLE="bin/console"
+  fi
+
 }
 
 # Set flags
@@ -338,14 +346,14 @@ init_repo(){
     git remote add -t ${LIVE_BRANCH} -f origin $GIT_URL
     git checkout ${LIVE_BRANCH}
 
-    if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+    if [ "$type" = "symfony" ] || [ "$type" = "silex" ]; then
 
       curl -S http://getcomposer.org/installer | $PHP_VM
       $PHP_VM composer.phar self-update
       $PHP_VM composer.phar install --prefer-dist --ignore-platform-reqs # --optimize-autoloader
     fi
 
-    if [ "$type" = "symfony2" ]; then
+    if [ "$type" = "symfony" ]; then
       cd ${DEPLOY_APP_BASE_PATH}/${LIVE_DIRECTORY}/web
       ln -s ../../uploads/${LIVE_DIRECTORY} uploads
 
@@ -382,7 +390,7 @@ init_repo(){
 
       git checkout ${STAGING_BRANCH}
 
-      if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+      if [ "$type" = "symfony" ] || [ "$type" = "silex" ]; then
 
         curl -S http://getcomposer.org/installer | $PHP_VM
         $PHP_VM composer.phar self-update
@@ -390,7 +398,7 @@ init_repo(){
 
       fi
 
-      if [ "$type" = "symfony2" ]; then
+      if [ "$type" = "symfony" ]; then
         # web/uploads for apache uploads
         cd ${DEPLOY_APP_BASE_PATH}/${STAGING_DIRECTORY}/web
         ln -s ../../uploads/${STAGING_DIRECTORY} uploads
@@ -426,7 +434,7 @@ init_repo(){
     # Create remote folders
     $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}
 
-    if [ "$type" = "symfony2" ]; then
+    if [ "$type" = "symfony" ]; then
       $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/var  
       $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/var
       $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads
@@ -443,7 +451,7 @@ init_repo(){
     fi
 
     ###### LIVE ###### 
-    if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+    if [ "$type" = "symfony" ] || [ "$type" = "silex" ]; then
       $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
       $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
       $ON_TARGET_DO sudo chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}/uploads/${LIVE_DIRECTORY}
@@ -463,7 +471,7 @@ init_repo(){
     ###### STAGING ###### 
     if [ "$HAS_STAGING" -gt 0 ]; then
 
-      if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+      if [ "$type" = "symfony" ] || [ "$type" = "silex" ]; then
         $ON_TARGET_DO mkdir -p ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
         $ON_TARGET_DO chmod 775 ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
         $ON_TARGET_DO sudo chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}/uploads/${STAGING_DIRECTORY}
@@ -575,8 +583,8 @@ unlock_maintenance(){
 
 bump_version(){
 
-  if [ "$type" = "symfony2" ]; then
-    $PHP_VM app/console version:bump --force || echo "No command available for version bumping."
+  if [ "$type" = "symfony" ]; then
+    $PHP_VM ${SYMFONY_CONSOLE} version:bump --force || echo "No command available for version bumping."
     ack "Version bumped."
   fi
 
@@ -609,24 +617,24 @@ build_js(){
 deploy(){
 
   # We should install vendors before deploying
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+  if [ "$type" = "symfony" ] || [ "$type" = "silex" ]; then
 
     cd ${DEPLOY_PATH}
 
-    # Symfony2 or Silex
+    # Symfony or Silex
     indicate "Installing vendors via Composer for app" ${app}
 
     # $PHP_VM composer.phar self-update
     $PHP_VM composer.phar install --ignore-platform-reqs # --optimize-autoloader
 
     # Cleaning the mess since it is a deploy folder
-    if [ "$type" = "symfony2" ]; then
+    if [ "$type" = "symfony" ]; then
       rm -fR ${DEPLOY_PATH}/web/bundles
       rm -fR ${DEPLOY_PATH}/app/cache/dev
       # This allows to warm the cache even if it fails, so the next command (assets) will not try to warm it
       # and fail miserably
       {
-        $PHP_VM app/console cache:clear --no-warmup -q
+        $PHP_VM ${SYMFONY_CONSOLE} cache:clear --no-warmup -q
       } || {
         ack "Cache warmup tried"
       }
@@ -653,14 +661,14 @@ release(){
   fi
 
   # Symfony 2 Stuff
-  if [ "$type" = "symfony2" ]; then
+  if [ "$type" = "symfony" ]; then
 
     cd ${RELEASE_PATH}
 
     # Dump assetic assets
-    $PHP_VM app/console assets:install web --symlink --relative
+    $PHP_VM ${SYMFONY_CONSOLE} assets:install web --symlink --relative
     if [ ! "$LATE_ASSETS" = 1 ]; then
-      $PHP_VM app/console assetic:dump -v --env=prod --no-debug
+      $PHP_VM ${SYMFONY_CONSOLE} assetic:dump -v --env=prod --no-debug
     fi
 
   elif [ "$type" = "ghost" ] || [ "$type" = "node" ]; then
@@ -690,7 +698,7 @@ update_changelog(){
     BASE_CHANGELOG_PATH=${RELEASE_PATH}
   fi
   
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then
+  if [ "$type" = "symfony" ] || [ "$type" = "silex" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/web/'${CHANGELOG_NAME}
   elif [ "$type" = "standalone" ]; then
     CHANGELOG_PATH=${BASE_CHANGELOG_PATH}'/'${CHANGELOG_NAME}
@@ -796,16 +804,16 @@ transfer(){
     fi
   fi
 
-  if [ "$type" = "symfony2" ]; then
+  if [ "$type" = "symfony" ]; then
 
     # Dump assetic assets
     if [ "$LATE_ASSETS" = 1 ]; then
-      $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console assetic:dump -v --env=prod --no-debug
+      $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/${SYMFONY_CONSOLE} assetic:dump -v --env=prod --no-debug
     fi
 
     # Warming up caches
     $ON_TARGET_DO rm -fR ${WWW_PATH}/app/cache/prod ${WWW_PATH}/app/cache/dev
-    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console cache:warmup --env=prod
+    $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/${SYMFONY_CONSOLE} cache:warmup --env=prod
 
     # A good idea to chgrp www-data
     $ON_TARGET_DO sudo chgrp -R ${WWW_USER} ${WWW_PATH}/*
@@ -823,10 +831,10 @@ transfer(){
 upgrade_db() {
 
   # Symfony 2 Stuff
-  if [ "$type" = "symfony2" ]; then
+  if [ "$type" = "symfony" ]; then
 
     ack "Upcoming changes to the schema"
-    UPDATES=`$ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console doctrine:schema:update --dump-sql`
+    UPDATES=`$ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/${SYMFONY_CONSOLE} doctrine:schema:update --dump-sql`
 
     clear
     echo ${UPDATES}
@@ -840,7 +848,7 @@ upgrade_db() {
       fi
       case $yn in
           [Yy]* ) said_yes "Updating schema"
-                  $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/app/console doctrine:schema:update --force # To be replaced with migrations later on ?
+                  $ON_TARGET_DO $PHP_VM_REMOTE ${WWW_PATH}/${SYMFONY_CONSOLE} doctrine:schema:update --force # To be replaced with migrations later on ?
                   clear
                   ack "Database updated !"
                   ;;
@@ -894,13 +902,13 @@ install_crontabs(){
                 NEW_CRON=${NEW_CRON//\[ROOT\]/$WWW_LINK}
 
                 # Replace the [CONSOLE]
-                if [ "$type" = "symfony2" ]; then
-                  CONSOLE_PATH=${WWW_LINK}"/app/console"
+                if [ "$type" = "symfony" ]; then
+                  CONSOLE_PATH=${WWW_LINK}"/${SYMFONY_CONSOLE}"
                   NEW_CRON=${NEW_CRON//\[CONSOLE\]/$CONSOLE_PATH}
                 fi
 
                 # Replace the [ENV]
-                if [ "$type" = "symfony2" ] && [ "$env" = "prod" ]; then
+                if [ "$type" = "symfony" ] && [ "$env" = "prod" ]; then
                   NEW_CRON=${NEW_CRON//\[ENV\]/prod}
                 else
                   NEW_CRON=${NEW_CRON//\[ENV\]/dev}
@@ -1023,10 +1031,10 @@ restart_node_app(){
   
 }
 
-# Restart PHP / HHVM, only for symfony2 or silex apps
+# Restart PHP / HHVM, only for symfony or silex apps
 restart_php_engine(){
 
-  if [ "$type" = "symfony2" ] || [ "$type" = "silex" ]; then 
+  if [ "$type" = "symfony" ] || [ "$type" = "silex" ]; then 
 
     if [ "$PHP_VM_REMOTE" = "hhvm" ]; then
         # Restart HHVM through service
