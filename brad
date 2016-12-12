@@ -826,7 +826,7 @@ transfer(){
     # $ON_TARGET_DO chgrp -R ${WWW_USER} ${WWW_APP_BASE_PATH}
 
     # Ensure that cache, logs are writable
-    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/${LOG_CACHE_DIR} ${WWW_PATH}/${LOG_CACHE_DIR}/cache ${WWW_PATH}/${LOG_CACHE_DIR}/logs ${WWW_PATH}/${LOG_CACHE_DIR}/sessions # web/uploads
+    $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/${LOG_CACHE_DIR} ${WWW_PATH}/${LOG_CACHE_DIR}/cache ${WWW_PATH}/${LOG_CACHE_DIR}/logs ${WWW_PATH}/app/var/sessions # web/uploads
     $ON_TARGET_DO chmod -R 775 ${WWW_PATH}/${LOG_CACHE_DIR}/cache/*
   fi
   
